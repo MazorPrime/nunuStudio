@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deepholm — one kind of thing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ground:#0B1213;--panel:#131F21;--line:#213436;--bone:#E6DDC7;--sand:#A2957A;
+      --dim:#66797A;--rust:#C4562F;--sage:#7C9862;--amber:#D9A441;--crys:#6E9CB5}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ground);color:var(--bone);font-family:'IBM Plex Mono',ui-monospace,monospace;
+     font-size:13px;line-height:1.5;padding:14px}
+.label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+       letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.shell{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.res{display:flex;gap:14px;margin-left:auto;font-size:12px;color:var(--dim)}
+.res b{color:var(--bone);font-weight:600}
+button{font-family:inherit;font-size:12px;background:transparent;color:var(--dim);
+       border:1px solid var(--line);border-radius:2px;padding:4px 10px;cursor:pointer}
+button:hover{color:var(--bone);border-color:var(--sand)}
+button.on{background:var(--line);color:var(--bone);border-color:var(--sand)}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.row{display:flex;gap:4px;flex-wrap:wrap}
+.main{display:grid;grid-template-columns:1fr 272px;gap:12px;align-items:start}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+canvas{width:100%;display:block;border:1px solid var(--line);background:#05090A;cursor:crosshair;touch-action:none}
+.tools{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.side{display:flex;flex-direction:column;gap:12px}
+.card{border:1px solid var(--line);background:var(--panel);padding:10px}
+.card>.label{display:block;margin-bottom:8px}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.card-head button{padding:1px 7px;font-size:11px}
+.pawn{border-top:1px solid var(--line);padding:7px 0;cursor:pointer}
+.pawn:first-of-type{border-top:none;padding-top:0}
+.pawn.dead{opacity:.32}
+.pawn.sel{background:#18292B;margin:0 -10px;padding-left:10px;padding-right:10px}
+.pawn-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.pawn-job{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.pawn-job.down{color:var(--rust)}
+.bar-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.bar-row span{font-size:10px;color:var(--dim);width:30px;flex:none}
+.bar{flex:1;height:4px;background:#05090A;overflow:hidden}
+.bar i{display:block;height:100%}
+.skill{display:flex;justify-content:space-between;font-size:11px;color:var(--sand);padding:1px 0}
+.skill b{color:var(--bone)}
+.pip{display:inline-block;width:5px;height:5px;margin-left:2px;background:var(--line)}
+.pip.on{background:var(--amber)}
+.wound{font-size:11px;color:var(--rust);padding:1px 0}
+.pros{font-size:11px;color:var(--crys);padding:1px 0}
+.legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:7px;
+  font-size:11px;color:var(--dim)}
+.legend i{display:inline-block;width:11px;height:11px;margin-right:5px;
+  vertical-align:-1px;border-radius:1px}
+.pgrid{width:100%;border-collapse:collapse;font-size:11px;margin-top:2px}
+.pgrid th{font-family:'Barlow Condensed',sans-serif;color:var(--dim);font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;font-size:10px;padding:2px 3px;font-weight:600}
+.pgrid td{padding:1px 2px}
+.pgrid td.nm{text-align:left;color:var(--bone);padding-right:10px;white-space:nowrap;font-size:11px}
+.pgrid tr.dead td{opacity:.3}
+.pc{display:block;width:100%;min-width:30px;border:1px solid var(--line);background:#05090A;
+  color:var(--dim);cursor:pointer;padding:2px 0;font-family:inherit;font-size:11px;border-radius:2px}
+.pc:hover{border-color:var(--sand)}
+.pc.p1{color:#8FB36E;border-color:#3C5A38;background:#111E17}
+.pc.p2{color:#B4B36A}
+.pc.p3{color:var(--sand)}
+.pc.p4{color:#7A6A55}
+.pc.off{color:#243233}
+.bill{border-top:1px solid var(--line);padding:6px 0}
+.bill:first-child{border-top:none;padding-top:0}
+.bill.paused{opacity:.42}
+.bill-top{display:flex;justify-content:space-between;align-items:center;gap:5px}
+.bill-top b{font-size:11px;color:var(--crys);font-weight:600}
+.bill-row{display:flex;align-items:center;gap:4px;margin-top:4px}
+.bill button{padding:1px 6px;font-size:11px;line-height:1.5}
+.bill .ct{font-size:11px;color:var(--sand);min-width:34px}
+select{font-family:inherit;font-size:11px;background:#05090A;color:var(--bone);
+  border:1px solid var(--line);border-radius:2px;padding:3px 5px}
+input[type=text]{font-family:inherit;font-size:12px;background:#05090A;color:var(--bone);
+  border:1px solid var(--line);border-radius:2px;padding:3px 7px;width:96px}
+.cap{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);padding:1px 0}
+.hint{color:var(--dim);font-size:11px;margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.log{background:#05090A;border:1px solid var(--line);height:132px;min-height:52px;
+  overflow-y:auto;padding:8px;resize:vertical}
+.panel{position:relative}
+.panel.collapsed>*:not(.card-head){display:none}
+.grip{cursor:grab;color:#2E4446;letter-spacing:-1px;font-size:13px;user-select:none;padding:0 4px}
+.grip:active{cursor:grabbing}
+.panel.dragging{opacity:.45;outline:1px dashed var(--sand)}
+.card-head .label{cursor:pointer;flex:1}
+.chev{color:var(--dim);font-size:11px;padding:0 4px;cursor:pointer;background:none;border:none}
+.chev:hover{color:var(--bone)}
+.log p{font-size:12px;padding:1px 0}
+.log .t{color:#3D5052;margin-right:8px}
+.ev{color:var(--amber)}.bad{color:var(--rust)}.good{color:var(--sage)}.hurt{color:#E08A5E}.cry{color:var(--crys)}
+#err{display:none;border:1px solid var(--rust);background:#2A1512;color:#E8A48C;padding:8px 10px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div id="err"></div>
+
+<header>
+  <h1>Deepholm</h1>
+  <div class="row">
+    <button data-s="0">Pause</button><button data-s="1" class="on">1&times;</button>
+    <button data-s="2">2&times;</button><button data-s="6">6&times;</button><button data-s="16">16&times;</button>
+  </div>
+  <div class="res">
+    <span>tick <b id="rTick">0</b></span><span>food <b id="rFood">0</b></span>
+    <span>stone <b id="rStone">0</b></span><span>taro <b id="rTaro">0</b></span><span>crystal <b id="rCrys">0</b></span><span>tomes <b id="rBook">0</b></span>
+    <span>rats <b id="rRats">0</b></span>
+  </div>
+</header>
+
+<div class="card panel" data-panel="log" id="panel-log">
+  <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+    <span class="label">Event log</span><button class="chev">&#9662;</button></div>
+  <div class="log" id="log"></div>
+</div>
+
+<div class="main">
+  <div>
+    <div class="tools">
+      <span class="label">Tool</span>
+      <button data-t="dig" class="on">Dig</button>
+      <button data-t="torch">Torch &middot; 2 stone</button>
+      <button data-t="everlight" id="btnEver" style="display:none">Everlight &middot; 2 crystal, 1 stone</button>
+      <button data-t="pen">Pen &middot; 4 stone</button>
+      <button data-t="lair">Lair</button>
+      <button data-t="cancel">Cancel</button>
+      <button data-t="inspect">Inspect</button>
+      <span style="color:var(--dim);font-size:11px" id="toolHint"></span>
+    </div>
+    <canvas id="cv"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="row" style="margin-top:8px">
+      <span class="label">Seed</span>
+      <input type="text" id="seedIn" value="deepholm">
+      <button id="newWorld">New world</button>
+      <button id="saveBtn">Save</button>
+      <button id="loadBtn">Load</button>
+      <input type="file" id="fileIn" accept=".json" style="display:none">
+    </div>
+    <div class="card panel" data-panel="priorities" style="margin-top:12px">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Work priorities</span>
+        <span style="color:var(--dim);font-size:11px">click to cycle &middot; 1 is highest &middot; blank is never</span>
+        <button class="chev">&#9662;</button></div>
+      <div style="overflow-x:auto"><table class="pgrid" id="pgrid"></table></div>
+    </div>
+  </div>
+
+  <div class="side" id="side">
+    <div class="card panel" data-panel="colonists">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Colonists</span><button class="chev">&#9662;</button></div>
+      <div id="pawns"></div></div>
+    <div class="card panel" data-panel="inspector">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span><span class="label">Inspector</span>
+        <button id="clearSel" style="display:none">Clear</button><button class="chev">&#9662;</button></div>
+      <div id="insp"></div>
+    </div>
+    <div class="card panel" data-panel="bills">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Bills</span><button class="chev">&#9662;</button></div>
+      <div class="row" style="margin-bottom:8px">
+        <select id="billPick"></select><button id="addBill">Add bill</button>
+      </div>
+      <div id="shop"></div>
+      <p class="hint">Nothing is crafted unless a bill asks for it.</p></div>
+    <div class="card panel" data-panel="heart">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Heartstone</span><button class="chev">&#9662;</button></div>
+      <div id="heart" style="font-size:11px;line-height:1.6"></div></div>
+    <div class="card panel" data-panel="pens">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Pens</span><button class="chev">&#9662;</button></div>
+      <div id="pens" style="font-size:11px;line-height:1.6"></div></div>
+    <div class="card panel" data-panel="study">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Study</span><button class="chev">&#9662;</button></div>
+      <div id="study" style="font-size:11px;line-height:1.6"></div></div>
+    <div class="card panel" data-panel="systems">
+      <div class="card-head"><span class="grip">&#8942;&#8942;</span>
+        <span class="label">Systems</span><button class="chev">&#9662;</button></div>
+      <div id="sys" style="font-size:11px;color:var(--sand);line-height:1.7"></div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════
+   0. SEEDED RNG — every random call in the sim goes through rng().
+      Math.random() is banned below this line. That one rule is what
+      makes a run reproducible: same seed, same world, same rat that
+      took Bryn's thumb on tick 812.
+   ═══════════════════════════════════════════════════════════════ */
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function hashSeed(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+let seedText="deepholm", rng=mulberry32(hashSeed(seedText));
+const pick = a => a[(rng()*a.length)|0];
+const aOrAn=n=>("aeiou".includes(n[0].toLowerCase())?"an ":"a ")+n.toLowerCase();
+const cap1 =s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+/* ═══════════════════════════════════════════════════════════════
+   1. DEFS
+   ═══════════════════════════════════════════════════════════════ */
+const DEFS = {
+  tickMs:200,                                   // wall-clock ms per tick at 1x
+  /* Yacon is bulk. Taro is dense — fewer units per vein and slower to
+     cut, but a single serving fills a creature and lifts its spirits. */
+  needs:{ food:{decay:0.05,urgent:45,yaconFill:60,taroFill:100,taroCheer:7,taroAt:28},
+          rest:{decay:0.032,urgentAt:32,restore:0.6,darkFearMult:1.6},
+          /* Working in the dark costs heart; that's fine and intended.
+              But recovery must NOT require standing in light, or a miner
+              at the frontier can never recover and the colony bleeds out
+              no matter how well you run it. Heart comes back in BED —
+              and comes back twice as fast if the lair is lit. Lighting
+              24 lair tiles is a thing a player can actually do. Lighting
+              1,300 tunnel tiles is not. */
+          morale:{start:70,
+                  /* No darkness term. These creatures live down here;
+                     the dark is not frightening, it is merely inconvenient
+                     to work in. Heart comes from a bed, a full belly and
+                     not being in pain. */
+                  noLair:0.030, hungry:0.022, painMult:0.026,
+                  recover:0.006, wakeBonus:12,
+                  warnAt:24, unrestAt:15, walkOutAt:640} },
+  /* A vein is mined one unit at a time and only collapses into open
+     floor when it's exhausted. units × unitTicks = total work for the
+     tile, so raising `units` makes the map richer AND slower — that
+     one number is the whole difficulty dial for the early game. */
+  materials:{
+    dirt:    {units:1,unitTicks:16,drop:null,            color:"#3A2E22"},
+    yacon:   {units:3,unitTicks:20,drop:{k:"food",n:2}, color:"#3B3A22"},
+    taro:    {units:2,unitTicks:34,drop:{k:"taro",n:2}, color:"#402A34"},
+    stone:   {units:8,unitTicks:32,drop:{k:"stone",n:1}, color:"#2C3638"},
+    crystal: {units:6,unitTicks:48,drop:{k:"crystal",n:1},color:"#24414E"}
+  },
+  light:{darkBelow:0.18,fullAt:0.45},
+  /* How much each kind of work suffers in the dark. Fine detail work is
+     nearly impossible without a lamp; carrying a rock barely cares. This
+     is multiplied by a species' own dark vision, so a creature born down
+     here pays none of it. */
+  darkSens:{ mine:0.55, craft:1.00, study:1.00, melee:0.40, move:0.18, fit:0.80 },
+  /* The Heartstone is what the deep answers to. While it burns, the rift
+     stays open and things come up to join you. Break it and you don't
+     lose — you just stop being able to call anyone. From then on the only
+     way to grow is to drag something into a pen and talk it round. */
+  heart:{hp:400, repairPerStone:22, repairWork:26,
+         rekindle:{stone:40,crystal:6}, ratDmg:1.4},
+  rift :{chargePerTick:1, cost:520, minFood:25},
+  /* Depth = walking distance from the home cavern. Everything dangerous
+     scales off it, so the digging verb itself generates the risk. */
+  depth:{ratBonusPer:18,hpPer:0.42,dmgPer:0.075,lightPierceAt:34,pierceChance:0.11,
+         bookPer:0.0006,bookCap:0.035},
+  rats :{spawnEvery:150,cap:8,biteEvery:8,biteDmg:4.0,severChance:0.13,hitChance:0.5,
+         speed:2,aggroRange:8,hp:18,fleeAt:6,
+         cowTicks:520,          // how long a beaten rat lies there before it expires
+         penCap:2,penCost:{stone:4},
+         tameWork:95,tameGain:13,tameFood:2,
+         breedEvery:210,breedYield:3},   // a warren pen pays for itself in food
+  pawn :{hp:100,regen:0.09,bedRegen:0.55,downedAt:26,standAt:62,
+         carryBase:24,gatherRadius:11,
+         baseMove:0.9,baseMelee:7,stoneMult:1.9,digSpeedDark:0.55},
+  skills:{xpPerTick:0.16,cap:20,curve:9,bonusPerLevel:0.055}
+};
+
+/* Recipes. A crystal hand is worth less than a hand plus five
+   fingers (0.50) but far more than nothing — and it can never be
+   whittled down again. That trade is the entire appeal. */
+/* Light sources are things with fuel. A torch eats stone; an everlight
+   is a crystal cell. Same code path, different numbers — which is why
+   adding the second one cost almost nothing. */
+const LIGHTS = {
+  torch:    {name:"Torch",    falloff:0.135,fuelMax:100,burn:0.030,fuel:"stone",
+             cost:{stone:2},  refuel:{stone:1},  refuelAt:34,tech:null},
+  everlight:{name:"Everlight",falloff:0.082,fuelMax:100,burn:0.009,fuel:"crystal",
+             cost:{crystal:2,stone:1},refuel:{crystal:1},refuelAt:30,tech:"cells"}
+};
+
+/* Tech is unlocked by reading tomes dug out of the deep rock, not by
+   picking from a menu. Exploration is the gate. */
+const TECHS = {
+  cells:{name:"Storm-Glass & Cells",books:1,work:420,
+         blurb:"Crystal cells hold a charge. Everlights burn far longer than fire, but want crystal to stay lit."}
+};
+let techs={};
+
+const RECIPES = {
+  crystalHand:{name:"Crystal Hand",fits:"hand",cost:{crystal:2,stone:1},work:70,share:0.42,pain:0.03},
+  crystalFoot:{name:"Crystal Foot",fits:"foot",cost:{crystal:2,stone:1},work:70,share:0.42,pain:0.03},
+  crystalEye :{name:"Crystal Eye", fits:"eye", cost:{crystal:3},        work:80,share:0.55,pain:0.00}
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   2. THE BODY
+      Named digits. Note the shares aren't equal — a thumb is worth
+      four pinkies, a hallux carries a foot's balance. And weights
+      are how LIKELY a part is to get hit, which is separate from
+      how much it matters. Two independent axes, both data.
+   ═══════════════════════════════════════════════════════════════ */
+const FINGERS = [
+  {name:"Thumb",         share:0.060, pain:0.050, weight:2},
+  {name:"Index Finger",  share:0.035, pain:0.035, weight:3},
+  {name:"Middle Finger", share:0.030, pain:0.030, weight:3},
+  {name:"Ring Finger",   share:0.020, pain:0.025, weight:3},
+  {name:"Pinky Finger",  share:0.015, pain:0.020, weight:3}
+];
+const TOES = [
+  {name:"Hallux",     share:0.060, pain:0.040, weight:2},
+  {name:"Index Toe",  share:0.030, pain:0.025, weight:2},
+  {name:"Middle Toe", share:0.025, pain:0.020, weight:2},
+  {name:"Ring Toe",   share:0.020, pain:0.020, weight:2},
+  {name:"Pinky Toe",  share:0.015, pain:0.015, weight:2}
+];
+const BODY_PLAN = [
+  {key:"eye", name:"Eye",  sided:true,  cap:"sight",   share:0.50, pain:0.15, weight:4},
+  {key:"ear", name:"Ear",  sided:true,  cap:"hearing", share:0.50, pain:0.05, weight:7},
+  {key:"nose",name:"Nose", sided:false, cap:null,      share:0,    pain:0.04, weight:6},
+  {key:"hand",name:"Hand", sided:true,  cap:"manip",   share:0.34, pain:0.22, weight:3, digits:FINGERS},
+  {key:"foot",name:"Foot", sided:true,  cap:"moving",  share:0.35, pain:0.20, weight:3, digits:TOES}
+];
+/* A rat's body is a different PLAN, not different code. Capacities are
+   still sight / hearing / manip / moving, so mining, combat, movement
+   and injury all work on a ratkin untouched. This is the second-race
+   test: it cost one table. */
+const RAT_PLAN=[
+  {key:"eye", name:"Eye",     sided:true, cap:"sight",  share:0.50,pain:0.15,weight:4},
+  {key:"ear", name:"Ear",     sided:true, cap:"hearing",share:0.50,pain:0.06,weight:6},
+  {key:"paw", name:"Forepaw", sided:true, cap:"manip",  share:0.36,pain:0.20,weight:4},
+  {key:"leg", name:"Hindleg", sided:true, cap:"moving", share:0.42,pain:0.20,weight:4},
+  {key:"tail",name:"Tail",    sided:false,cap:"moving", share:0.16,pain:0.08,weight:5}
+];
+const RAT_NAMES=["Skitter","Gnaw","Bristle","Nibs","Grist","Scur","Tuft","Whisker","Cinder","Prowl"];
+
+const SIDES=["left","right"];
+
+function newBody(plan){
+  const parts=[];
+  for(const p of (plan||BODY_PLAN)){
+    const plan=p;
+    const sides = plan.sided?SIDES:[""];
+    for(const side of sides){
+      parts.push({key:plan.key,name:plan.name,side,cap:plan.cap,share:plan.share,
+                  pain:plan.pain,weight:plan.weight,parent:null,gone:false,pros:null});
+      if(plan.digits) for(const d of plan.digits)
+        parts.push({key:d.name,name:d.name,side,cap:plan.cap,share:d.share,
+                    pain:d.pain,weight:d.weight,parent:plan.key,gone:false,pros:null});
+    }
+  }
+  return parts;
+}
+const partLabel = b => (b.side?b.side+" ":"")+(b.pros?RECIPES[b.pros].name:b.name);
+const partLower = b => partLabel(b).toLowerCase();
+const isMissing = b => b.gone && !b.pros;
+
+/* Prosthetics slot straight into the capacity sum. Nothing downstream
+   needed changing — mining, combat and movement already read capacities
+   rather than counting body parts. */
+function caps(p){
+  const c={sight:0,hearing:0,manip:0,moving:0};
+  for(const b of p.body){
+    if(!b.cap) continue;
+    if(b.pros) c[b.cap]+=RECIPES[b.pros].share;
+    else if(!b.gone) c[b.cap]+=b.share;
+  }
+  for(const k in c) c[k]=Math.min(1,c[k]);
+  return c;
+}
+const painOf = p => Math.min(1, p.body.reduce((t,b)=>
+  t+(b.pros?RECIPES[b.pros].pain:(b.gone?b.pain:0)),0));
+
+function sever(p,attacker){
+  const pool=[];
+  for(const b of p.body) if(!b.gone&&!b.pros) for(let i=0;i<b.weight;i++) pool.push(b);
+  if(!pool.length) return;
+  const hit=pick(pool);
+  hit.gone=true;
+  let extra=0;
+  for(const b of p.body)                       // a hand takes its fingers with it
+    if(!b.gone && b.parent===hit.key && b.side===hit.side){ b.gone=true; extra++; }
+  log(`${attacker} takes ${p.name}'s ${partLower(hit)}${extra?` and every finger on it`:""}.`,"hurt");
+}
+/* which prosthetic does this pawn most need? */
+function neededPros(p){
+  for(const b of p.body)
+    if(isMissing(b)&&!b.parent)
+      for(const [k,r] of Object.entries(RECIPES)) if(r.fits===b.key) return k;
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. SKILLS
+   ═══════════════════════════════════════════════════════════════ */
+const SKILL_LIST=["mining","melee","moving","crafting"];
+const newSkills=()=>{const s={};for(const k of SKILL_LIST)s[k]={xp:rng()*20};return s;};
+const lvl=(p,k)=>Math.min(DEFS.skills.cap,Math.floor(Math.sqrt(p.skills[k].xp/DEFS.skills.curve)));
+const skillMult=(p,k)=>1+lvl(p,k)*DEFS.skills.bonusPerLevel;
+function gain(p,k,amt){
+  const b=lvl(p,k); p.skills[k].xp+=amt; const a=lvl(p,k);
+  if(a>b&&a%4===0) log(`${p.name} is getting good at ${k}. (${a})`,"good");
+}
+const consciousness = p => Math.max(0.15,1-painOf(p)*0.55-(1-p.hp/DEFS.pawn.hp)*0.35);
+/* Dodge — quick, sighted, unhurt colonists are hard to bite. A rat now has
+   to beat this roll, so injuries compound instead of the damage number
+   simply being large. */
+const dodge=p=>Math.min(0.75,(0.10+caps(p).moving*0.22+caps(p).sight*0.10
+                 +lvl(p,"melee")*0.022)*(p.downed?0.25:1)*consciousness(p));
+const armed     = p => p.carry?.k==="stone";
+/* How much a colonist can hold in one trip. Strong hands carry more,
+   ratkin carry less. Before this a pawn hauled ONE stack per round trip,
+   so a six-unit vein meant six walks to the stockpile and back. */
+/* 0 in pitch black, 1 at working light. */
+const lightFrac=(x,y)=>Math.min(1,light[idx(x,y)]/DEFS.light.fullAt);
+/* What a creature loses doing THIS kind of work, HERE. */
+function darkMult(p,kind){
+  const dv=spOf(p).darkVision;
+  if(dv>=1) return 1;                              // dark-adapted: no penalty at all
+  const sens=DEFS.darkSens[kind]||0;
+  return 1-(1-lightFrac(p.x,p.y))*sens*(1-dv);
+}
+const carryCap =p=>Math.max(1,Math.round(DEFS.pawn.carryBase*(0.4+0.6*caps(p).manip)*(spOf(p).carry||1)));
+const moveSpeed = p => DEFS.pawn.baseMove*(0.25+0.75*caps(p).moving)*skillMult(p,"moving")*consciousness(p)*spOf(p).move*darkMult(p,"move");
+const digRate   = p => caps(p).manip*skillMult(p,"mining")*consciousness(p)*spOf(p).dig*darkMult(p,"mine");
+const craftRate = p => caps(p).manip*(0.4+0.6*caps(p).sight)*skillMult(p,"crafting")*consciousness(p)*darkMult(p,"craft");
+const studyRate = p => caps(p).manip*(0.4+0.6*caps(p).sight)*skillMult(p,"crafting")*consciousness(p)*darkMult(p,"study");
+const meleeDmg  = p => DEFS.pawn.baseMelee*caps(p).manip*(0.45+0.55*caps(p).sight)
+                       *skillMult(p,"melee")*consciousness(p)*spOf(p).melee*darkMult(p,"melee")
+                   *(armed(p)?DEFS.pawn.stoneMult:1);
+
+/* ═══════════════════════════════════════════════════════════════
+   4. FLAVOUR — kill lines vary by weapon and circumstance.
+      Pure data. Adding a race's own vocabulary later is one array.
+   ═══════════════════════════════════════════════════════════════ */
+const KILLS = {
+  bare:["throttled a rat","beat a rat to death","stomped a rat flat","wrung a rat's neck",
+        "crushed a rat underfoot","pounded a rat into the floor","choked the life out of a rat",
+        "snapped a rat like a twig"],
+  stone:["crushed a rat with a stone","caved in a rat's skull","brained a rat","dashed a rat against the rock",
+         "split a rat open with a stone","clubbed a rat to death","smashed a rat flat"],
+  any:["liberated a rat from life","ended a rat's brief career","convinced a rat to stop",
+       "sent a rat wherever rats go","concluded negotiations with a rat"],
+  clumsy:["fell on a rat until it stopped moving","somehow killed a rat","won an ugly argument with a rat",
+          "outlasted a rat, barely"],
+  expert:["put a rat down in one clean motion","killed a rat without breaking stride",
+          "dispatched a rat with practised contempt"],
+  crystal:["opened a rat with a crystal hand","raked a rat apart","split a rat on crystal"]
+};
+const DARK_LINES=["Something moves in the dark tunnels.","A skittering, somewhere below.",
+  "Small claws on stone, out past the light.","The dark has started making noise.",
+  "Something is breeding where the torches don't reach."];
+function killLine(p,wasArmed){
+  const pool=[...(wasArmed?KILLS.stone:KILLS.bare),...KILLS.any];
+  if(p.body.some(b=>b.pros==="crystalHand")) pool.push(...KILLS.crystal,...KILLS.crystal);
+  if(p.hp<45||painOf(p)>0.3) pool.push(...KILLS.clumsy,...KILLS.clumsy);
+  if(lvl(p,"melee")>=8) pool.push(...KILLS.expert,...KILLS.expert);
+  return `${p.name} ${pick(pool)}.`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. WORLD
+   ═══════════════════════════════════════════════════════════════ */
+const W=56,H=34,CELL=16;
+const idx=(x,y)=>y*W+x, inB=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+const nbrs=(x,y)=>[[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(p=>inB(p[0],p[1]));
+const dist=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+
+let solid,mat,dig,light,region,regionCount,vein,depth,digClaim,roomTile;
+const R_NONE=0,R_LAIR=1;
+/* ── ONE CONTAINER ────────────────────────────────────────────
+   Colonists and beasts were two arrays with two sets of rules, and
+   every shared idea — being carried, being knocked down, being
+   converted — had to be written twice. Now there is one actors[]
+   list. `faction` says whose side you are on; `ai` says who drives
+   you. `pawns` and `rats` are views onto it, rebuilt only when the
+   membership actually changes, so nothing downstream had to care
+   and no hot loop pays for a filter.
+
+   A third creature type is now a species row and a faction string. */
+const F_HOLD="hold", F_WILD="wild";
+let actors=[],pawns=[],rats=[];
+let things,items,store,tick,speed=1,nextId=1,selId=null;
+
+function reindex(){
+  pawns=actors.filter(a=>a.ai==="colonist");
+  rats =actors.filter(a=>a.ai==="beast");
+}
+function addActor(a){ actors.push(a); reindex(); return a; }
+function removeActor(a){
+  const i=actors.indexOf(a);
+  if(i>=0) actors.splice(i,1);
+  reindex();
+}
+function nextName(sp){
+  const S=SPECIES[sp];
+  const used=actors.filter(a=>a.sp===sp&&a.ai==="colonist").length;
+  return S.names[used%S.names.length]+(used>=S.names.length?" "+(1+((used/S.names.length)|0)):"");
+}
+let regionsDirty=true,lightDirty=true;
+const NAMES=["Bryn","Corm","Dask","Ellu","Fask","Grum","Hild","Ivo","Jorn","Kell"];
+
+/* ID lookups replace direct object references everywhere. This is the
+   whole reason save/load is possible now — a serialised job holds a
+   number, not a pointer into a live object graph. */
+const byId=(arr,id)=>arr.find(o=>o.id===id)||null;
+function jobTarget(j){
+  if(!j||!j.targetId) return null;
+  if(j.targetKind==="rat")   return byId(rats,j.targetId);
+  if(j.targetKind==="thing") return byId(things,j.targetId);
+  if(j.targetKind==="item")  return byId(items,j.targetId);
+  if(j.targetKind==="pawn")  return byId(pawns,j.targetId);
+  return null;
+}
+
+function genWorld(){
+  rng=mulberry32(hashSeed(seedText));
+  solid=new Uint8Array(W*H).fill(1); mat=new Array(W*H);
+  dig=new Uint8Array(W*H); light=new Float32Array(W*H); region=new Int32Array(W*H).fill(-1);
+  vein=new Uint8Array(W*H); depth=new Int32Array(W*H).fill(-1);
+  digClaim=new Int32Array(W*H); roomTile=new Uint8Array(W*H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const r=rng(), i=idx(x,y);
+    mat[i]=r<0.075?"yacon":r<0.095?"taro":r<0.345?"stone":r<0.38?"crystal":"dirt";
+    vein[i]=DEFS.materials[mat[i]].units;
+  }
+  for(let y=14;y<20;y++)for(let x=24;x<32;x++) solid[idx(x,y)]=0;
+  for(let x=0;x<W;x++){solid[idx(x,0)]=1;solid[idx(x,H-1)]=1;}
+  for(let y=0;y<H;y++){solid[idx(0,y)]=1;solid[idx(W-1,y)]=1;}
+  nextId=1;
+  techs={};
+  things=[{id:nextId++,kind:"heart",x:29,y:16,hp:DEFS.heart.hp,dark:false,claim:null},
+          {id:nextId++,kind:"rift",x:31,y:16,charge:0,claim:null},
+          {id:nextId++,kind:"light",light:"torch",x:27,y:17,fuel:LIGHTS.torch.fuelMax},
+          {id:nextId++,kind:"bench",x:30,y:15},
+          {id:nextId++,kind:"study",x:31,y:17},
+          ];
+  items=[]; store={x:29,y:16,food:14,taro:2,stone:14,crystal:0,book:0,parts:{}};
+  for(const k in RECIPES) store.parts[k]=0;
+  actors=[]; reindex(); tick=0; selId=null;
+  for(let y=14;y<17;y++)for(let x=24;x<27;x++) roomTile[idx(x,y)]=R_LAIR;   // a starting lair
+  addPawn(26,17); addPawn(28,17); addPawn(27,18);
+  for(const p of pawns) p.sp="delver";
+  bills=defaultBills();
+  regionsDirty=lightDirty=true;
+  rebuildRegions(); rebuildDepth(); rebuildLight();
+}
+function addPawn(x,y,sp="delver"){
+  const S=SPECIES[sp];
+  return addActor({id:nextId++,sp,ai:"colonist",faction:F_HOLD,name:nextName(sp),
+    x,y,moveAcc:0,
+    needs:{food:78+rng()*15,rest:78+rng()*15,morale:DEFS.needs.morale.start},
+    hp:DEFS.pawn.hp,body:newBody(S.plan),skills:newSkills(),
+    prio:Object.assign({},S.prio), feeder:null, lairTile:-1, unrest:0, sleptLit:false,
+    downed:false,job:null,path:[],carry:null,carryPawnId:null,beingCarried:false,
+    carryRatId:null,rescuer:null,dead:false});
+}
+
+/* A beaten rat that comes round to your side keeps its own body —
+   including whatever your colonists broke getting it there. */
+function convertToHold(r,into){
+  const sp=into||spOf(r).tamesTo||"ratkin";
+  r.ai="colonist"; r.faction=F_HOLD; r.sp=sp;
+  r.name=nextName(sp);
+  r.prio=Object.assign({},SPECIES[sp].prio);
+  r.needs={food:70,rest:70,morale:DEFS.needs.morale.start};
+  r.skills=r.skills||newSkills();
+  r.hp=Math.max(45,r.hp||45);
+  r.moveAcc=0; r.job=null; r.path=[]; r.carry=null;
+  r.carryPawnId=null; r.carryRatId=null; r.beingCarried=false;
+  r.rescuer=null; r.feeder=null; r.lairTile=-1; r.unrest=0;
+  r.downed=false; r.dead=false;
+  r.penned=false; r.cowed=false; r.tamer=null; r.carriedBy=null; r.penId=null;
+  reindex();
+  return r;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. REGIONS + LIGHT + PATHS
+   ═══════════════════════════════════════════════════════════════ */
+function rebuildRegions(){
+  region.fill(-1); regionCount=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=idx(x,y);
+    if(solid[i]||region[i]!==-1) continue;
+    const id=regionCount++,q=[[x,y]]; region[i]=id;
+    while(q.length){const [cx,cy]=q.pop();
+      for(const [nx,ny] of nbrs(cx,cy)){const ni=idx(nx,ny);
+        if(!solid[ni]&&region[ni]===-1){region[ni]=id;q.push([nx,ny]);}}}
+  }
+  regionsDirty=false;
+}
+/* Depth = BFS steps from the home cavern through open floor. Rides the
+   same dirty flag as regions, so it costs nothing extra. */
+function rebuildDepth(){
+  depth.fill(-1);
+  const st=idx(store.x,store.y);
+  if(solid[st]) return;
+  depth[st]=0; const q=[st];
+  while(q.length){
+    const cur=q.shift(), cx=cur%W, cy=(cur/W)|0;
+    for(const [nx,ny] of nbrs(cx,cy)){
+      const ni=idx(nx,ny);
+      if(solid[ni]||depth[ni]!==-1) continue;
+      depth[ni]=depth[cur]+1; q.push(ni);
+    }
+  }
+}
+const depthAt=(x,y)=>{const d=depth[idx(x,y)];return d<0?0:d;};
+
+function lightPower(t){
+  const L=LIGHTS[t.light];
+  if(!L||t.fuel<=0) return 0;
+  return 0.45+0.55*Math.min(1,t.fuel/L.fuelMax);   // guttering torches dim
+}
+function rebuildLight(){
+  light.fill(0);
+  for(const t of things){
+    if(t.kind!=="light") continue;
+    const P0=lightPower(t); if(P0<=0) continue;
+    const FO=LIGHTS[t.light].falloff;
+    const q=[[t.x,t.y,P0]],best=new Float32Array(W*H); best[idx(t.x,t.y)]=P0;
+    while(q.length){const [cx,cy,v]=q.shift();
+      if(v>light[idx(cx,cy)]) light[idx(cx,cy)]=v;
+      const nv=v-FO; if(nv<=0) continue;
+      for(const [nx,ny] of nbrs(cx,cy)){const ni=idx(nx,ny);
+        if(solid[ni]){if(nv>light[ni])light[ni]=nv*0.75;continue;}
+        if(nv>best[ni]){best[ni]=nv;q.push([nx,ny,nv]);}}}
+  }
+  lightDirty=false;
+}
+const lit=(x,y)=>light[idx(x,y)];
+const isDark=(x,y)=>light[idx(x,y)]<DEFS.light.darkBelow;
+function reachable(sx,sy,tx,ty){
+  if(regionsDirty){ rebuildRegions(); rebuildDepth(); }
+  const a=region[idx(sx,sy)]; return a!==-1&&a===region[idx(tx,ty)];
+}
+function findPath(sx,sy,tx,ty){
+  if(sx===tx&&sy===ty) return [];
+  if(!reachable(sx,sy,tx,ty)) return null;
+  const seen=new Uint8Array(W*H),from=new Int32Array(W*H).fill(-1);
+  const start=idx(sx,sy),goal=idx(tx,ty),q=[start]; seen[start]=1;
+  while(q.length){
+    const cur=q.shift();
+    if(cur===goal){const p=[];let c=cur;
+      while(c!==start){p.push({x:c%W,y:(c/W)|0});c=from[c];}return p.reverse();}
+    const cx=cur%W,cy=(cur/W)|0;
+    for(const [nx,ny] of nbrs(cx,cy)){const ni=idx(nx,ny);
+      if(seen[ni]||solid[ni])continue; seen[ni]=1;from[ni]=cur;q.push(ni);}
+  }
+  return null;
+}
+function pathAdjacent(p,tx,ty){
+  let best=null;
+  for(const [nx,ny] of nbrs(tx,ty)){
+    if(solid[idx(nx,ny)]) continue;
+    const path=findPath(p.x,p.y,nx,ny);
+    if(path&&(!best||path.length<best.path.length)) best={path,x:nx,y:ny};
+  }
+  return best;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. JOBS
+   ═══════════════════════════════════════════════════════════════ */
+/* ── WORK TYPES ────────────────────────────────────────────────
+   Survival needs are scored on a fixed scale far above any work.
+   Work is scored as (5 - priority) * 100 + a type tiebreak, so the
+   player's priority number is the PRIMARY sort and the type order
+   only settles ties — which is exactly how RimWorld behaves. A
+   priority of 0 means "never". */
+const WORK_TYPES=[
+  {key:"rescue",name:"Rescue",base:92},
+  {key:"fit",   name:"Doctor",base:70},
+  {key:"haul",  name:"Haul",  base:50},
+  {key:"craft", name:"Craft", base:47},
+  {key:"build", name:"Build", base:45},
+  {key:"beast", name:"Beasts",base:60},
+  {key:"study", name:"Study", base:43},
+  {key:"mine",  name:"Mine",  base:40}
+];
+const DEFAULT_PRIO={rescue:1,fit:2,beast:2,haul:3,craft:3,build:3,study:2,mine:3};
+
+/* Two species, one code path. A ratkin can't craft or read — not because
+   anything checks "is this a rat", but because those work types simply
+   aren't in its priority table, and an absent priority scores -1. */
+const SPECIES={
+  delver:{name:"Delver",plan:null,names:NAMES,color:"#E6DDC7",
+    prio:DEFAULT_PRIO, move:1.00,dig:1.00,melee:1.00,food:1.00,carry:1.0,bed:"bedroll",
+    darkVision:0.45,
+    /* What the rift sends is decided by what you have built. Delvers are
+       the skilled caste — they only come to a hold that looks like it has
+       thinking work in it. */
+    attract:{weight:3, needs:[
+      {kind:"thing", what:"study", n:1, label:"a study bench"},
+      {kind:"beds",  n:2,             label:"2 spare beds"}
+    ]}},
+  ratkin:{name:"Ratkin",plan:RAT_PLAN,names:RAT_NAMES,color:"#D6A47C",
+    prio:{haul:2,mine:2,build:3}, move:1.30,dig:0.82,melee:0.85,food:0.72,carry:0.7,bed:"nest",
+    darkVision:1.00,                              // born in the deep; the dark costs it nothing
+    attract:{weight:2, needs:[
+      {kind:"thing", what:"pen", n:1, label:"a pen (word travels)"},
+      {kind:"beds",  n:1,            label:"a spare bed"}
+    ]}}
+};
+SPECIES.caverat={name:"Cave Rat",plan:RAT_PLAN,names:["rat"],color:"#C4562F",
+  prio:{}, move:1.00,dig:0,melee:1.00,food:0.5,carry:0,bed:"nest",darkVision:1.00,attract:null,
+  tamesTo:"ratkin"};
+
+const spOf=p=>SPECIES[p.sp]||SPECIES.delver;
+const canDo=(p,wk)=>spOf(p).prio[wk]!=null;
+const EMERGENCY={fight:11000,flee:10500,eat:10000,sleep:9000};
+
+function scoreOf(p,j){
+  if(EMERGENCY[j.type]!=null) return EMERGENCY[j.type];
+  if(j.type==="idle") return 0;
+  const wt=WORK_TYPES.find(w=>w.key===j.wk);
+  if(!wt) return 0;
+  const pr=(p.prio&&p.prio[j.wk])|0;
+  if(!pr) return -1;                       // disabled by the player
+  return (5-pr)*100+wt.base;
+}
+/* Anything hitting the floor merges with a like stack already on that
+   tile. Six pulls from one vein now leave one pile, not six. */
+function dropItem(x,y,k,n){
+  const ex=items.find(i=>i.x===x&&i.y===y&&i.k===k&&!i.claim);
+  if(ex){ ex.n+=n; return ex; }
+  const it={id:nextId++,x,y,k,n,claim:null};
+  items.push(it); return it;
+}
+/* A lair tile is a bed. One creature claims one tile and keeps it — that
+   claim IS the population ceiling: a creature with nowhere to sleep loses
+   heart and eventually walks out of the hold. */
+function lairTaken(i){ return pawns.some(q=>!q.dead&&q.lairTile===i); }
+function freeLairCount(){
+  let n=0;
+  for(let i=0;i<W*H;i++) if(roomTile[i]===R_LAIR&&!lairTaken(i)) n++;
+  return n;
+}
+function claimLair(p){
+  if(p.lairTile>=0&&roomTile[p.lairTile]===R_LAIR&&!solid[p.lairTile]){
+    const owner=pawns.find(q=>!q.dead&&q.id!==p.id&&q.lairTile===p.lairTile);
+    if(!owner) return p.lairTile;
+  }
+  p.lairTile=-1;
+  let best=-1,bd=1e9;
+  for(let i=0;i<W*H;i++){
+    if(roomTile[i]!==R_LAIR||solid[i]||lairTaken(i)) continue;
+    const x=i%W,y=(i/W)|0, d=Math.abs(x-p.x)+Math.abs(y-p.y);
+    if(d<bd&&reachable(p.x,p.y,x,y)){bd=d;best=i;}
+  }
+  if(best>=0) p.lairTile=best;
+  return best;
+}
+const onOwnBed=p=>p.lairTile>=0&&idx(p.x,p.y)===p.lairTile;
+
+/* Connected lair tiles form rooms — used for the readout, and the hook
+   every future room type plugs into. */
+function roomsOf(type){
+  const seen=new Uint8Array(W*H); const out=[];
+  for(let i=0;i<W*H;i++){
+    if(roomTile[i]!==type||seen[i]) continue;
+    const q=[i]; seen[i]=1; const tiles=[];
+    while(q.length){
+      const c=q.pop(); tiles.push(c);
+      const cx=c%W,cy=(c/W)|0;
+      for(const [nx,ny] of nbrs(cx,cy)){
+        const ni=idx(nx,ny);
+        if(roomTile[ni]===type&&!seen[ni]){seen[ni]=1;q.push(ni);}
+      }
+    }
+    out.push(tiles);
+  }
+  return out;
+}
+const heartOf =()=>things.find(t=>t.kind==="heart")||null;
+const riftOf  =()=>things.find(t=>t.kind==="rift")||null;
+const heartAlive=()=>{const h=heartOf();return !!h&&!h.dark&&h.hp>0;};
+
+/* Does the hold currently meet this species' requirements? */
+function attractCheck(sp){
+  const A=SPECIES[sp].attract; if(!A) return null;
+  const free=freeLairCount();
+  const unmet=[];
+  for(const nd of A.needs){
+    if(nd.kind==="thing"){
+      if(things.filter(t=>t.kind===nd.what).length<nd.n) unmet.push(nd.label);
+    } else if(nd.kind==="beds"){
+      if(free<nd.n) unmet.push(nd.label);
+    } else if(nd.kind==="tech"){
+      if(!techs[nd.what]) unmet.push(nd.label);
+    }
+  }
+  return {ok:unmet.length===0, unmet, weight:A.weight};
+}
+function riftCandidates(){
+  const out=[];
+  for(const sp in SPECIES){
+    const c=attractCheck(sp);
+    if(c) out.push({sp,...c});
+  }
+  return out;
+}
+
+/* The rift only charges while the Heartstone burns. */
+function tickRift(){
+  const r=riftOf(); if(!r) return;
+  if(!heartAlive()){ r.charge=Math.max(0,r.charge-2); return; }
+  if(store.food<DEFS.rift.minFood) return;         // nothing to feed an arrival
+  r.charge+=DEFS.rift.chargePerTick;
+  if(r.charge<DEFS.rift.cost) return;
+  const pool=riftCandidates().filter(c=>c.ok);
+  if(!pool.length) return;                          // charged, but nothing will come
+  r.charge=0;
+  let total=pool.reduce((a,c)=>a+c.weight,0), roll=rng()*total, pick=pool[0];
+  for(const c of pool){ roll-=c.weight; if(roll<=0){pick=c;break;} }
+  addPawn(r.x,r.y,pick.sp);
+  const nu=pawns[pawns.length-1];
+  log(`The rift stirs. ${nu.name} climbs out of the dark and stays.`,"cry");
+  lastGridSig=lastListSig="";
+}
+
+/* Rats will chew on the Heartstone if they reach it. */
+function ratsGnawHeart(){
+  const h=heartOf(); if(!h||h.dark) return;
+  for(const r of rats){
+    if(r.cowed||r.penned) continue;
+    if(Math.abs(r.x-h.x)>1||Math.abs(r.y-h.y)>1) continue;
+    if(r.gcool>0){ r.gcool--; continue; }
+    r.gcool=DEFS.rats.biteEvery;
+    h.hp-=DEFS.heart.ratDmg;
+    if(h.hp<=0){
+      h.hp=0; h.dark=true;
+      log("The Heartstone cracks and goes dark. The rift closes.","bad");
+      log("Nothing will answer a call now. Whatever joins you, you must drag in yourself.","ev");
+    }
+  }
+}
+function penOccupancy(pen){ return rats.filter(r=>r.penned&&r.penId===pen.id).length; }
+function freePen(){ return things.find(t=>t.kind==="pen"&&penOccupancy(t)<DEFS.rats.penCap)||null; }
+const canAfford=r=>Object.entries(r.cost).every(([k,n])=>store[k]>=n);
+const canPay=c=>Object.entries(c).every(([k,n])=>store[k]>=n);
+const pay=c=>{for(const [k,n] of Object.entries(c)) store[k]-=n;};
+function nextTech(){ for(const k in TECHS) if(!techs[k]) return k; return null; }
+
+/* ── BILLS ─────────────────────────────────────────────────────
+   Crafting is now player-queued rather than inferred from injuries.
+   A bill is data: recipe, mode, target, progress, paused. */
+let bills=[];
+function billSatisfied(b){
+  const inFlight=pawns.filter(p=>p.job?.type==="craft"&&p.job.billId===b.id).length;
+  if(b.mode==="count") return b.done+inFlight>=b.target;
+  return (store.parts[b.recipe]||0)+inFlight>=b.target;
+}
+function nextBill(){
+  for(const b of bills){
+    if(b.paused) continue;
+    if(billSatisfied(b)) continue;
+    if(!canAfford(RECIPES[b.recipe])) continue;
+    return b;
+  }
+  return null;
+}
+function defaultBills(){
+  return [{id:nextId++,recipe:"crystalHand",mode:"until",target:1,done:0,paused:false}];
+}
+
+function pickJob(p){
+  const o=[];
+  const nearRat=rats.find(r=>!r.cowed&&!r.penned&&dist(r,p)<=1);
+  if(nearRat){
+    const scared=p.hp<45||(!armed(p)&&lvl(p,"melee")<3)||painOf(p)>0.35;
+    if(scared){const sp=fleeSpot(p); if(sp) o.push({type:"flee",tx:sp.x,ty:sp.y});}
+    o.push({type:"fight",tx:p.x,ty:p.y,targetKind:"rat",targetId:nearRat.id});
+  }
+  if(p.needs.food<=DEFS.needs.food.urgent&&(store.food>0||store.taro>0))
+    o.push({type:"eat",tx:store.x,ty:store.y});
+  if(p.needs.rest<=DEFS.needs.rest.urgentAt){
+    const t=claimLair(p);
+    if(t>=0) o.push({type:"sleep",tx:t%W,ty:(t/W)|0});
+    else     o.push({type:"sleep",tx:p.x,ty:p.y});      // sleeping rough
+  }
+
+  /* Feed the fallen. Without this a downed colonist starves on the
+     bedroll: they can't act, so they can't eat, and healing needs food
+     above a threshold they can never climb back to. Rescue saves the
+     body and then nothing saves the person. */
+  if(!p.downed&&store.food>0){
+    const starving=pawns.find(q=>q.downed&&!q.dead&&!q.beingCarried
+                    &&q.needs.food<70&&(!q.feeder||q.feeder===p.id)
+                    &&reachable(p.x,p.y,q.x,q.y));
+    if(starving)
+      o.push({type:"feed",wk:"fit",tx:starving.x,ty:starving.y,
+              targetKind:"pawn",targetId:starving.id,work:12});
+  }
+
+  /* Haul a beaten rat to a pen. */
+  if(!p.downed&&!p.carryRatId&&!p.carry){
+    const pen=freePen();
+    const cow=pen&&rats.find(r=>r.cowed&&!r.penned&&!r.carriedBy&&reachable(p.x,p.y,r.x,r.y));
+    if(cow) o.push({type:"capture",wk:"beast",tx:cow.x,ty:cow.y,
+                    targetKind:"rat",targetId:cow.id,penId:pen.id});
+  }
+  /* Feed a penned rat until it stops being a rat. */
+  if(!p.downed&&store.food>=DEFS.rats.tameFood){
+    const pris=store.food>=DEFS.rats.tameFood&&rats.find(r=>{
+      if(!r.penned||r.tame>=100||r.tamer) return false;
+      const pen=byId(things,r.penId);
+      return !pen||pen.mode!=="breed";        // livestock pens aren't tamed
+    });
+    if(pris&&reachable(p.x,p.y,pris.x,pris.y))
+      o.push({type:"tame",wk:"beast",tx:pris.x,ty:pris.y,targetKind:"rat",targetId:pris.id,
+              work:DEFS.rats.tameWork});
+  }
+
+  // rescue — claim is checked here AND set on pickup, so two colonists
+  // can no longer both haul the same body
+  // ...and not already lying on a bedroll, or they get ferried back and
+  // forth to the same bed forever
+  const onBedNow=q=>roomTile[idx(q.x,q.y)]===R_LAIR;
+  const hurt=pawns.find(q=>q.downed&&!q.dead&&q.id!==p.id&&!q.beingCarried&&!onBedNow(q)
+                        &&(!q.rescuer||q.rescuer===p.id)&&reachable(p.x,p.y,q.x,q.y));
+  if(hurt&&!p.downed&&!p.carryPawnId)
+    o.push({type:"rescue",wk:"rescue",tx:hurt.x,ty:hurt.y,targetKind:"pawn",targetId:hurt.id});
+
+  const need=neededPros(p);
+  if(need&&store.parts[need]>0){
+    const t=claimLair(p);
+    if(t>=0) o.push({type:"fit",wk:"fit",tx:t%W,ty:(t/W)|0,recipe:need,work:50});
+  }
+
+  if(p.carry) o.push({type:"haul",wk:"haul",tx:store.x,ty:store.y});
+  else{
+    const it=nearest(items,p);
+    if(it) o.push({type:"haul",wk:"haul",tx:it.x,ty:it.y,targetKind:"item",targetId:it.id,pickup:true});
+
+    const bill=nextBill();
+    const bench=things.find(t=>t.kind==="bench");
+    if(bill&&bench)
+      o.push({type:"craft",wk:"craft",tx:bench.x,ty:bench.y,targetKind:"thing",targetId:bench.id,
+              recipe:bill.recipe,billId:bill.id,work:RECIPES[bill.recipe].work});
+
+    // build a pending light
+    const spot=things.find(t=>t.kind==="lightsite"&&!t.claim&&canPay(LIGHTS[t.light].cost));
+    if(spot)
+      o.push({type:"build",wk:"build",tx:spot.x,ty:spot.y,targetKind:"thing",targetId:spot.id,work:34});
+
+    // tend the Heartstone: patch cracks, or rekindle it if it has gone out
+    const h=heartOf();
+    if(h&&!h.claim){
+      if(h.dark&&canPay(DEFS.heart.rekindle))
+        o.push({type:"rekindle",wk:"build",tx:h.x,ty:h.y,targetKind:"thing",targetId:h.id,work:200});
+      else if(!h.dark&&h.hp<DEFS.heart.hp&&store.stone>0)
+        o.push({type:"mend",wk:"build",tx:h.x,ty:h.y,targetKind:"thing",targetId:h.id,
+                work:DEFS.heart.repairWork});
+    }
+
+    const psite=things.find(t=>t.kind==="pensite"&&!t.claim&&canPay(DEFS.rats.penCost));
+    if(psite)
+      o.push({type:"buildpen",wk:"build",tx:psite.x,ty:psite.y,targetKind:"thing",targetId:psite.id,work:40});
+
+    // top up whatever is burning low — this is the work that never ends
+    const dry=things.find(t=>t.kind==="light"&&!t.claim
+              &&t.fuel<LIGHTS[t.light].refuelAt&&canPay(LIGHTS[t.light].refuel));
+    if(dry)
+      o.push({type:"refuel",wk:"build",tx:dry.x,ty:dry.y,targetKind:"thing",targetId:dry.id,work:16});
+
+    // read a tome
+    const study=things.find(t=>t.kind==="study"&&!t.claim);
+    const tech=nextTech();
+    if(study&&tech&&store.book>=TECHS[tech].books)
+      o.push({type:"study",wk:"study",tx:study.x,ty:study.y,targetKind:"thing",targetId:study.id,
+              tech,work:TECHS[tech].work});
+    const d=nearestDig(p);
+    if(d) o.push({type:"mine",wk:"mine",tx:d.x,ty:d.y,adj:d.adj,work:DEFS.materials[mat[idx(d.x,d.y)]].unitTicks});
+  }
+
+  const scored=o.map(j=>({j,s:scoreOf(p,j)})).filter(e=>e.s>=0);
+  scored.sort((a,b)=>b.s-a.s);
+  const j=(scored[0]&&scored[0].j)||wander(p); if(!j) return;
+  const path=j.type==="mine"?j.adj.path:findPath(p.x,p.y,j.tx,j.ty);
+  if(path===null){ if(j.type==="mine") dig[idx(j.tx,j.ty)]=2; return; }
+  const t=jobTarget(j);
+  if(t&&j.type!=="fight"&&j.type!=="rescue"&&("claim" in t)) t.claim=p.id;
+  if(j.type==="rescue"&&t) t.rescuer=p.id;
+  if(j.type==="feed"&&t) t.feeder=p.id;
+  if(j.type==="tame"&&t) t.tamer=p.id;
+  if(j.type==="capture"&&t) t.carriedBy=p.id;
+  if(j.type==="mine") digClaim[idx(j.tx,j.ty)]=p.id;
+  j.work=j.work||0; p.job=j; p.path=path;
+}
+function fleeSpot(p){
+  let best=null,bs=-1;
+  for(let i=0;i<40;i++){
+    const x=1+((rng()*(W-2))|0),y=1+((rng()*(H-2))|0);
+    if(solid[idx(x,y)]||!reachable(p.x,p.y,x,y)) continue;
+    let s=lit(x,y)*6-dist({x,y},store)*0.4;
+    for(const r of rats) s+=Math.min(8,dist(r,{x,y}))*0.7;
+    if(s>bs){bs=s;best={x,y};}
+  }
+  return best;
+}
+function nearest(arr,p){
+  let b=null,bd=1e9;
+  for(const a of arr){if(a.claim&&a.claim!==p.id)continue;
+    const d=dist(a,p); if(d<bd&&reachable(p.x,p.y,a.x,a.y)){bd=d;b=a;}}
+  return b;
+}
+/* One miner per tile. Without this, every idle colonist walks to the
+   same designation and they all chip the same vein in parallel — which
+   makes unitTicks meaningless and the tile fall apart three times too
+   fast. Claims are transient, so they aren't saved. */
+function nearestDig(p){
+  let best=null,bd=1e9;
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+    const i=idx(x,y);
+    if(dig[i]!==1||!solid[i]) continue;
+    if(digClaim[i]&&digClaim[i]!==p.id&&pawns.some(q=>q.id===digClaim[i]&&!q.dead&&q.job?.type==="mine")) continue;
+    const d=Math.abs(x-p.x)+Math.abs(y-p.y); if(d>=bd)continue;
+    const adj=pathAdjacent(p,x,y); if(adj){bd=d;best={x,y,adj};}
+  }
+  return best;
+}
+function wander(p){
+  for(let i=0;i<14;i++){
+    const x=1+((rng()*(W-2))|0),y=1+((rng()*(H-2))|0);
+    if(!solid[idx(x,y)]&&reachable(p.x,p.y,x,y)) return {type:"idle",tx:x,ty:y};
+  }
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. TICK
+   ═══════════════════════════════════════════════════════════════ */
+function step(){
+  tick++;
+  if(regionsDirty){ rebuildRegions(); rebuildDepth(); }
+  if(lightDirty)   rebuildLight();
+
+  // torches and cells burn down; light goes dirty as they cross a band
+  for(const t of things){
+    if(t.kind!=="light"||t.fuel<=0) continue;
+    const before=lightPower(t);
+    t.fuel=Math.max(0,t.fuel-LIGHTS[t.light].burn);
+    if(Math.abs(lightPower(t)-before)>0.02||t.fuel<=0){
+      lightDirty=true;
+      if(t.fuel<=0) log(`A ${LIGHTS[t.light].name.toLowerCase()} gutters out.`,"ev");
+    }
+  }
+
+  for(const p of pawns.slice()){          // snapshot: leavers mutate the view
+    if(p.dead) continue;
+    p.needs.food-=DEFS.needs.food.decay*spOf(p).food;
+    const sleeping=(p.job?.type==="sleep"||p.job?.type==="fit")&&!p.path.length;
+    if(!sleeping&&!p.downed){
+      let d=DEFS.needs.rest.decay;
+      if(isDark(p.x,p.y)) d*=1+(DEFS.needs.rest.darkFearMult-1)*(1-spOf(p).darkVision);
+      p.needs.rest-=d;
+    }
+    /* Morale. It only means anything because it has a consequence: a
+       creature with nowhere to sleep, nothing to eat and no light will
+       eventually stop being yours and walk out of the hold. */
+    const M=DEFS.needs.morale;
+    if(p.needs.morale==null) p.needs.morale=M.start;
+    // claim a bed as soon as one exists, not only when finally exhausted —
+    // otherwise creatures are counted homeless beside empty beds
+    if(p.lairTile<0&&!p.downed&&tick%17===p.id%17) claimLair(p);
+    let dm=0;
+    const homeless=p.lairTile<0||roomTile[p.lairTile]!==R_LAIR;
+    if(homeless)                 dm-=M.noLair;
+    if(p.needs.food<30)          dm-=M.hungry;
+    dm-=painOf(p)*M.painMult;
+    if(!homeless&&p.needs.food>55) dm+=M.recover;
+    p.needs.morale=Math.max(0,Math.min(100,p.needs.morale+dm));
+
+    if(p.needs.morale<=M.unrestAt){
+      if(p.unrest===0) log(`${p.name} is talking about leaving.`,"ev");
+      p.unrest++;
+      if(p.unrest>M.walkOutAt&&!p.downed){
+        log(`${p.name} has had enough of the hold and walks out.`,"bad");
+        release(p);
+        removeActor(p);
+        lastGridSig=lastListSig="";
+        continue;
+      }
+    } else if(p.unrest>0) p.unrest=Math.max(0,p.unrest-3);
+
+    if(p.downed) p.needs.food+=DEFS.needs.food.decay*0.55;   // lying still burns less
+    const onBed=onOwnBed(p)||roomTile[idx(p.x,p.y)]===R_LAIR;
+    if(p.needs.food>18&&p.hp<DEFS.pawn.hp) p.hp+=onBed?DEFS.pawn.bedRegen:DEFS.pawn.regen;
+
+    if(!p.downed&&p.hp<=DEFS.pawn.downedAt){
+      p.downed=true; done(p); p.path=[]; log(`${p.name} collapses.`,"bad");
+    } else if(p.downed&&p.hp>=DEFS.pawn.standAt&&!p.beingCarried){
+      p.downed=false; log(`${p.name} gets back up.`,"good");
+    }
+    if(p.needs.food<=0||p.hp<=0){
+      p.dead=true;p.hp=Math.max(0,p.hp);p.needs.food=Math.max(0,p.needs.food);
+      release(p); log(`${p.name} is dead.`,"bad");
+    }
+  }
+
+  for(const p of pawns){
+    if(p.dead||p.downed) continue;
+    if(!p.job){pickJob(p);continue;}
+    if(p.path.length){
+      p.moveAcc+=moveSpeed(p);
+      while(p.moveAcc>=1&&p.path.length){
+        p.moveAcc-=1; const n=p.path.shift(); p.x=n.x;p.y=n.y;
+        const cp=byId(pawns,p.carryPawnId); if(cp){cp.x=p.x;cp.y=p.y;}
+        const cr=byId(rats,p.carryRatId); if(cr){cr.x=p.x;cr.y=p.y;}
+      }
+      gain(p,"moving",DEFS.skills.xpPerTick*0.4);
+      if(p.path.length) continue;
+    }
+    doJob(p);
+  }
+
+  if(tick%DEFS.rats.spawnEvery===0) trySpawnRat();
+  if(tick%DEFS.rats.speed===0) moveRats();
+  ratsBite(); ratsGnawHeart(); tickCowed(); tickWarrens(); tickRift();
+}
+
+function doJob(p){
+  const j=p.job;
+  switch(j.type){
+    case "eat":{
+      const F=DEFS.needs.food;
+      // reach for taro when properly starving, otherwise eat the bulk crop
+      const wantTaro = store.taro>0 && (p.needs.food<=F.taroAt || store.food<=0);
+      if(wantTaro){
+        store.taro--;
+        p.needs.food=Math.min(100,p.needs.food+F.taroFill);
+        p.needs.morale=Math.min(100,(p.needs.morale||0)+F.taroCheer);
+      } else if(store.food>0){
+        store.food--;
+        p.needs.food=Math.min(100,p.needs.food+F.yaconFill);
+      }
+      return done(p);
+    }
+    case "sleep":{
+      const M=DEFS.needs.morale;
+      p.needs.rest+=DEFS.needs.rest.restore*(isDark(p.x,p.y)?0.75:1);
+      if(p.needs.rest>=97){
+        p.needs.rest=100;
+        // heart comes back on WAKING, as a lump — so a good short sleep in a
+        // lit lair beats a long miserable one in the dark
+        if(onOwnBed(p)) p.needs.morale=Math.min(100,(p.needs.morale||0)+M.wakeBonus);
+        done(p);
+      }
+      return;
+    }
+    case "flee": return done(p);
+
+    case "capture":{
+      const r=jobTarget(j);
+      if(!r||!r.cowed||r.penned){ if(r) r.carriedBy=null; p.carryRatId=null; return done(p); }
+      if(!p.carryRatId){
+        if(dist(p,r)>1){ r.carriedBy=null; return done(p); }
+        const pen=byId(things,j.penId)||freePen();
+        if(!pen){ r.carriedBy=null; return done(p); }
+        const path=findPath(p.x,p.y,pen.x,pen.y);
+        if(!path){ r.carriedBy=null; return done(p); }
+        p.carryRatId=r.id; r.carriedBy=p.id; j.penId=pen.id;
+        j.tx=pen.x; j.ty=pen.y; p.path=path;
+        log(`${p.name} drags ${aOrAn(spOf(r).name)} to the pen.`,"ev");
+        return;
+      }
+      const pen=byId(things,j.penId);
+      r.penned=true; r.cowed=false; r.carriedBy=null; r.tame=0;
+      r.penId=pen?pen.id:null; r.x=p.x; r.y=p.y;
+      p.carryRatId=null;
+      return done(p);
+    }
+
+    case "tame":{
+      const r=jobTarget(j);
+      if(!r||!r.penned||store.food<DEFS.rats.tameFood){ if(r) r.tamer=null; return done(p); }
+      j.work-=1;
+      if(j.work>0) return;
+      store.food=Math.max(0,store.food-DEFS.rats.tameFood);
+      r.tame+=DEFS.rats.tameGain;
+      r.tamer=null;
+      if(r.tame>=100){
+        const nu=convertToHold(r);          // same creature, new allegiance
+        const scars=nu.body.filter(b=>isMissing(b)).length;
+        log(`The thing in the pen answers to a name now. ${nu.name} joins the hold`+
+            `${scars?`, still missing ${scars} part${scars>1?"s":""}`:""}.`,"cry");
+        lastGridSig=lastListSig="";
+      } else {
+        log(`${p.name} feeds the penned ${spOf(r).name.toLowerCase()}. It watches, less afraid.`);
+      }
+      return done(p);
+    }
+
+    case "feed":{
+      const t=jobTarget(j);
+      if(!t||t.dead||!t.downed||store.food<=0){ if(t) t.feeder=null; return done(p); }
+      if(dist(p,t)>1){ t.feeder=null; return done(p); }
+      if(--j.work>0) return;
+      store.food--; t.needs.food=Math.min(100,t.needs.food+55); t.feeder=null;
+      log(`${p.name} feeds ${t.name}.`,"good");
+      return done(p);
+    }
+    case "rescue":{
+      const t=jobTarget(j);
+      if(t&&t.rescuer===p.id&&!p.carryPawnId) t.rescuer=null;
+      if(!t||t.dead||!t.downed){
+        const cp=byId(pawns,p.carryPawnId); if(cp){cp.beingCarried=false;cp.rescuer=null;}
+        p.carryPawnId=null; return done(p);
+      }
+      if(!p.carryPawnId){
+        if(dist(p,t)>1) return done(p);
+        p.carryPawnId=t.id; t.beingCarried=true;
+        const bt=(t.lairTile>=0&&roomTile[t.lairTile]===R_LAIR)?t.lairTile:claimLair(t);
+        const bx=bt>=0?bt%W:store.x, by=bt>=0?(bt/W)|0:store.y;
+        const path=findPath(p.x,p.y,bx,by);
+        if(path){j.tx=bx;j.ty=by;p.path=path;
+          log(`${p.name} carries ${t.name} to safety.`,"good"); return;}
+      }
+      const cp=byId(pawns,p.carryPawnId);
+      if(cp){cp.x=p.x;cp.y=p.y;cp.beingCarried=false;cp.rescuer=null;}
+      p.carryPawnId=null;
+      return done(p);
+    }
+    case "fight":{
+      const r=jobTarget(j);
+      if(!r||dist(r,p)>1) return done(p);
+      const wasArmed=armed(p);
+      r.hp-=meleeDmg(p); gain(p,"melee",DEFS.skills.xpPerTick*1.4);
+      if(r.hp<=0){
+        // beaten, not killed — the thing that was eating you is now labour,
+        // if somebody gets to it before it comes round
+        r.hp=1; r.cowed=true; r.cowTimer=DEFS.rats.cowTicks;
+        log(`${p.name} beats ${aOrAn(spOf(r).name)} down. It lies twitching.`,"good");
+        done(p);
+      }
+      return;
+    }
+    case "haul":
+      if(j.pickup){
+        const it=jobTarget(j); if(!it) return done(p);
+        items.splice(items.indexOf(it),1);
+        p.carry = p.carry&&p.carry.k===it.k ? {k:it.k,n:p.carry.n+it.n} : {k:it.k,n:it.n};
+
+        // still room in your arms? sweep up the next like pile nearby
+        // instead of walking all the way home for one unit
+        const cap=carryCap(p);
+        if(p.carry.n<cap){
+          let best=null,bd=1e9;
+          for(const o of items){
+            if(o.k!==p.carry.k||(o.claim&&o.claim!==p.id)) continue;
+            const d=dist(o,p);
+            if(d<bd&&d<=DEFS.pawn.gatherRadius&&reachable(p.x,p.y,o.x,o.y)){bd=d;best=o;}
+          }
+          if(best){
+            const path=findPath(p.x,p.y,best.x,best.y);
+            if(path){
+              best.claim=p.id; j.targetId=best.id; j.tx=best.x; j.ty=best.y;
+              p.path=path; return;
+            }
+          }
+        }
+        return done(p);
+      }
+      if(p.carry){store[p.carry.k]+=p.carry.n;p.carry=null;}
+      return done(p);
+
+    case "craft":{
+      j.work-=craftRate(p); gain(p,"crafting",DEFS.skills.xpPerTick*1.2);
+      if(j.work>0) return;
+      const r=RECIPES[j.recipe];
+      if(!canAfford(r)) return done(p);
+      for(const [k,n] of Object.entries(r.cost)) store[k]-=n;
+      store.parts[j.recipe]++;
+      const bill=bills.find(b=>b.id===j.billId); if(bill) bill.done++;
+      log(`${p.name} shapes a ${r.name.toLowerCase()}.`,"cry");
+      return done(p);
+    }
+
+    case "fit":{
+      if(--j.work>0) return;
+      if(store.parts[j.recipe]<=0) return done(p);
+      const r=RECIPES[j.recipe];
+      const slot=p.body.find(b=>isMissing(b)&&!b.parent&&b.key===r.fits);
+      if(!slot) return done(p);
+      store.parts[j.recipe]--; slot.pros=j.recipe;
+      log(`${p.name} is fitted with a ${r.name.toLowerCase()}.`,"cry");
+      return done(p);
+    }
+    case "build":{
+      if(--j.work>0) return;
+      const site=jobTarget(j); if(!site) return done(p);
+      const L=LIGHTS[site.light];
+      if(!canPay(L.cost)) return done(p);
+      pay(L.cost);
+      things.splice(things.indexOf(site),1);
+      things.push({id:nextId++,kind:"light",light:site.light,x:j.tx,y:j.ty,fuel:L.fuelMax,claim:null});
+      lightDirty=true; log(`${p.name} sets up ${L.name==="Torch"?"a torch":"an everlight"}.`,"good");
+      return done(p);
+    }
+
+    case "buildpen":{
+      if(--j.work>0) return;
+      const site=jobTarget(j); if(!site) return done(p);
+      if(!canPay(DEFS.rats.penCost)) return done(p);
+      pay(DEFS.rats.penCost);
+      things.splice(things.indexOf(site),1);
+      things.push({id:nextId++,kind:"pen",mode:"tame",x:j.tx,y:j.ty,claim:null});
+      log(`${p.name} builds a pen.`,"good");
+      return done(p);
+    }
+
+    case "mend":{
+      if(--j.work>0) return;
+      const h=jobTarget(j);
+      if(!h||h.dark||store.stone<=0) return done(p);
+      store.stone--; h.hp=Math.min(DEFS.heart.hp,h.hp+DEFS.heart.repairPerStone);
+      return done(p);
+    }
+
+    case "rekindle":{
+      j.work-=craftRate(p); gain(p,"crafting",DEFS.skills.xpPerTick);
+      if(j.work>0) return;
+      const h=jobTarget(j);
+      if(!h||!h.dark||!canPay(DEFS.heart.rekindle)) return done(p);
+      pay(DEFS.heart.rekindle);
+      h.dark=false; h.hp=Math.round(DEFS.heart.hp*0.4);
+      log(`${p.name} rekindles the Heartstone. The rift breathes again.`,"cry");
+      return done(p);
+    }
+
+    case "refuel":{
+      if(--j.work>0) return;
+      const t=jobTarget(j); if(!t) return done(p);
+      const L=LIGHTS[t.light];
+      if(!canPay(L.refuel)) return done(p);
+      pay(L.refuel); t.fuel=L.fuelMax; lightDirty=true;
+      return done(p);
+    }
+
+    case "study":{
+      j.work-=studyRate(p); gain(p,"crafting",DEFS.skills.xpPerTick*0.8);
+      if(j.work>0) return;
+      const T=TECHS[j.tech];
+      if(!T||techs[j.tech]||store.book<T.books) return done(p);
+      store.book-=T.books; techs[j.tech]=true;
+      log(`${p.name} finishes the tome. ${T.name} understood.`,"cry");
+      refreshTools();
+      return done(p);
+    }
+
+    case "mine":{
+      const i=idx(j.tx,j.ty);
+      if(!solid[i]||dig[i]!==1) return done(p);
+      j.work-=digRate(p); gain(p,"mining",DEFS.skills.xpPerTick);
+      if(j.work>0) return;
+
+      // one unit out of the vein
+      const m=DEFS.materials[mat[i]];
+      if(m.drop) dropItem(p.x,p.y,m.drop.k,m.drop.n);
+      if(vein[i]>0) vein[i]--;
+
+      // tomes are buried deep — the further you dig, the more you find
+      const dd=depthAt(p.x,p.y);
+      const bc=Math.min(DEFS.depth.bookCap,dd*DEFS.depth.bookPer);
+      if(rng()<bc){
+        dropItem(p.x,p.y,"book",1);
+        log(`${p.name} breaks into a niche — a tome, sealed in wax.`,"ev");
+      }
+
+      if(vein[i]>0){ j.work=m.unitTicks; return; }   // keep chipping
+      solid[i]=0; dig[i]=0;
+      regionsDirty=lightDirty=true;
+      return done(p);
+    }
+    default: return done(p);
+  }
+}
+function done(p){
+  const t=jobTarget(p.job);
+  if(t&&("claim" in t)&&t.claim===p.id) t.claim=null;
+  if(p.job?.type==="mine"){
+    const i=idx(p.job.tx,p.job.ty);
+    if(digClaim[i]===p.id) digClaim[i]=0;
+  }
+  p.job=null;
+}
+function release(p){
+  for(const t of things) if(t.claim===p.id) t.claim=null;
+  for(const it of items) if(it.claim===p.id) it.claim=null;
+  const cp=byId(pawns,p.carryPawnId); if(cp){cp.beingCarried=false;cp.rescuer=null;}
+  for(const q of pawns){ if(q.rescuer===p.id) q.rescuer=null; if(q.feeder===p.id) q.feeder=null; }
+  for(const r of rats){ if(r.carriedBy===p.id) r.carriedBy=null; if(r.tamer===p.id) r.tamer=null; }
+  p.carryRatId=null;
+  for(let i=0;i<W*H;i++) if(digClaim[i]===p.id) digClaim[i]=0;
+  p.carryPawnId=null;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9. RATS
+   ═══════════════════════════════════════════════════════════════ */
+function deepest(){ let m=0; for(let i=0;i<W*H;i++) if(!solid[i]&&depth[i]>m) m=depth[i]; return m; }
+
+function trySpawnRat(){
+  const D=DEFS.depth;
+  const far=deepest();
+  const cap=DEFS.rats.cap+Math.floor(far/D.ratBonusPer);   // deeper colony, more of them
+  if(rats.filter(r=>!r.cowed&&!r.penned).length>=cap) return;
+  const cand=[];
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+    const i=idx(x,y);
+    if(solid[i]) continue;
+    const dark=light[i]<DEFS.light.darkBelow;
+    const dd=depth[i]<0?0:depth[i];
+    // dark tiles always breed. Lit tiles are safe near home, but out in
+    // the deep something still finds its way in — so a fully lit colony
+    // is no longer a permanent win.
+    if(dark) cand.push({x,y,d:dd});
+    else if(dd>=D.lightPierceAt&&rng()<D.pierceChance) cand.push({x,y,d:dd});
+  }
+  if(!cand.length) return;
+  const c=pick(cand);
+  const bonus=c.d;
+  addActor({id:nextId++,sp:"caverat",ai:"beast",faction:F_WILD,name:"rat",
+    x:c.x,y:c.y,body:newBody(RAT_PLAN),skills:newSkills(),
+    cool:0,gcool:0,cowed:false,cowTimer:0,penned:false,tame:0,
+    carriedBy:null,tamer:null,penId:null,dead:false,
+    hp:DEFS.rats.hp+bonus*DEFS.depth.hpPer,
+    dmg:DEFS.rats.biteDmg+bonus*DEFS.depth.dmgPer,
+    deep:bonus>=D.lightPierceAt});
+  if(rats.length%3===1) log(pick(DARK_LINES),"ev");
+}
+function moveRats(){
+  for(const r of rats){
+    if(r.cowed||r.penned) continue;
+    let opts=nbrs(r.x,r.y).filter(([x,y])=>!solid[idx(x,y)]);
+    if(!opts.length) continue;
+    if(r.hp<=DEFS.rats.fleeAt){
+      opts.sort((a,b)=>lit(a[0],a[1])-lit(b[0],b[1]));
+    } else {
+      let tgt=null,bd=1e9;
+      for(const p of pawns){if(p.dead)continue; const d=dist(p,r); if(d<bd){bd=d;tgt=p;}}
+      const hs=heartOf();
+      if(tgt&&bd<=DEFS.rats.aggroRange)
+        opts.sort((a,b)=>(Math.abs(a[0]-tgt.x)+Math.abs(a[1]-tgt.y))-(Math.abs(b[0]-tgt.x)+Math.abs(b[1]-tgt.y)));
+      else if(hs&&!hs.dark&&reachable(r.x,r.y,hs.x,hs.y)&&rng()<0.6)
+        // nothing to chase: go for the stone itself
+        opts.sort((a,b)=>(Math.abs(a[0]-hs.x)+Math.abs(a[1]-hs.y))-(Math.abs(b[0]-hs.x)+Math.abs(b[1]-hs.y)));
+      else opts=[pick(opts)];
+    }
+    r.x=opts[0][0]; r.y=opts[0][1];
+  }
+}
+function tickCowed(){
+  for(const r of rats.slice()){
+    if(r.penned||!r.cowed) continue;
+    if(r.carriedBy) continue;
+    if(--r.cowTimer>0) continue;
+    removeActor(r);
+    dropItem(r.x,r.y,"food",2);
+    log(`${cap1(aOrAn(spOf(r).name))} stops twitching. Nobody came for it.`,"ev");
+  }
+}
+/* Livestock. A pen set to Breed turns held rats into a renewable food
+   supply, which is the counterweight to conversion: every rat is either
+   a worker or a meal, and you can't have both. */
+function tickWarrens(){
+  if(tick%DEFS.rats.breedEvery!==0) return;
+  for(const pen of things){
+    if(pen.kind!=="pen"||pen.mode!=="breed") continue;
+    const held=rats.filter(r=>r.penned&&r.penId===pen.id).length;
+    if(!held) continue;
+    dropItem(pen.x,pen.y,"food",DEFS.rats.breedYield*held);
+  }
+}
+function ratsBite(){
+  for(const r of rats){
+    if(r.cowed||r.penned) continue;
+    if(r.cool>0){r.cool--;continue;}
+    const p=pawns.find(p=>!p.dead&&dist(p,r)<=1);
+    if(!p) continue;
+    r.cool=DEFS.rats.biteEvery;
+    if(rng() > DEFS.rats.hitChance*(1-dodge(p))){                 // missed
+      if(rng()<0.25) log(`${p.name} twists away from a rat.`);
+      continue;
+    }
+    p.hp-=(r.dmg||DEFS.rats.biteDmg)*(p.downed?0.45:1);
+    if(rng()<DEFS.rats.severChance) sever(p,"A rat");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. SAVE / LOAD — possible only because nothing holds a pointer.
+       Every reference in a saved pawn is a number.
+   ═══════════════════════════════════════════════════════════════ */
+function saveState(){
+  return JSON.stringify({v:1,seedText,tick,nextId,
+    solid:Array.from(solid),dig:Array.from(dig),mat,vein:Array.from(vein),
+    roomTile:Array.from(roomTile),
+    things,items,actors,store,bills,techs,layout:layoutState()});
+}
+function loadState(json){
+  const st=JSON.parse(json);
+  seedText=st.seedText; seedIn.value=seedText;
+  rng=mulberry32(hashSeed(seedText)+st.tick);   // continue, don't replay
+  tick=st.tick; nextId=st.nextId; mat=st.mat;
+  solid=Uint8Array.from(st.solid); dig=Uint8Array.from(st.dig);
+  digClaim=new Int32Array(W*H);
+  roomTile=st.roomTile?Uint8Array.from(st.roomTile):new Uint8Array(W*H);
+  vein=st.vein?Uint8Array.from(st.vein):new Uint8Array(W*H);
+  if(!st.vein) for(let i=0;i<W*H;i++) vein[i]=solid[i]?DEFS.materials[mat[i]].units:0;
+  techs=st.techs||{};
+  light=new Float32Array(W*H); region=new Int32Array(W*H).fill(-1); depth=new Int32Array(W*H).fill(-1);
+  things=st.things; items=st.items; store=st.store;
+  if(st.actors) actors=st.actors;
+  else{                                    // pre-v15: two arrays become one
+    actors=[];
+    for(const p of (st.pawns||[])){ p.ai="colonist"; p.faction=F_HOLD; actors.push(p); }
+    for(const r of (st.rats||[])){
+      r.ai="beast"; r.faction=F_WILD; r.sp="caverat"; r.name="rat";
+      if(!r.body)   r.body=newBody(RAT_PLAN);
+      if(!r.skills) r.skills=newSkills();
+      if(r.dead===undefined) r.dead=false;
+      actors.push(r);
+    }
+  }
+  reindex();
+  bills=st.bills||defaultBills();
+  if(store.book==null) store.book=0;
+  for(const t of things){                                  // migrate pre-fuel saves
+    if(t.kind==="torch"){ t.kind="light"; t.light="torch"; t.fuel=LIGHTS.torch.fuelMax; }
+    if(t.kind==="torchsite"){ t.kind="lightsite"; t.light="torch"; }
+    if(t.kind==="light"&&t.fuel==null) t.fuel=LIGHTS[t.light||"torch"].fuelMax;
+  }
+  if(!things.some(t=>t.kind==="study")) things.push({id:nextId++,kind:"study",x:31,y:17,claim:null});
+  for(const t of things) if(t.kind==="pen"&&!t.mode) t.mode="tame";
+  if(!things.some(t=>t.kind==="heart"))
+    things.push({id:nextId++,kind:"heart",x:store.x,y:store.y,hp:DEFS.heart.hp,dark:false,claim:null});
+  if(!things.some(t=>t.kind==="rift"))
+    things.push({id:nextId++,kind:"rift",x:store.x+2,y:store.y,charge:0,claim:null});
+  // v10 saves: old bedrolls become lair tiles, old rootDirt becomes yacon
+  for(let i=things.length-1;i>=0;i--) if(things[i].kind==="bedroll"){
+    roomTile[idx(things[i].x,things[i].y)]=R_LAIR; things.splice(i,1);
+  }
+  for(let i=0;i<W*H;i++) if(mat[i]==="rootDirt") mat[i]="yacon";
+  if(store.taro==null) store.taro=0;
+  for(const a of actors){
+    if(!a.ai) a.ai=a.body&&a.prio?"colonist":"beast";
+    if(!a.faction) a.faction=a.ai==="colonist"?F_HOLD:F_WILD;
+    if(!a.body) a.body=newBody(SPECIES[a.sp]?SPECIES[a.sp].plan:null);
+    if(!a.skills) a.skills=newSkills();
+  }
+  reindex();
+  for(const p of pawns){
+    if(!p.sp) p.sp="delver";
+    if(p.carryRatId===undefined) p.carryRatId=null;
+    if(p.lairTile===undefined) p.lairTile=-1;
+    if(p.unrest===undefined) p.unrest=0;
+
+    if(p.needs.morale==null) p.needs.morale=DEFS.needs.morale.start;
+    if(!p.prio) p.prio=Object.assign({},SPECIES[p.sp].prio);
+    for(const w of WORK_TYPES)
+      if(canDo(p,w.key)&&p.prio[w.key]==null) p.prio[w.key]=SPECIES[p.sp].prio[w.key];
+    for(const k in p.prio) if(!canDo(p,k)) delete p.prio[k];
+  }
+  for(const r of rats){
+    if(r.cowed===undefined){ r.cowed=false;r.cowTimer=0;r.penned=false;r.tame=0; }
+    if(r.carriedBy===undefined) r.carriedBy=null;
+    if(r.gcool===undefined) r.gcool=0;
+    if(r.tamer===undefined) r.tamer=null;
+    if(r.penId===undefined) r.penId=null;
+  }
+  if(!store.parts) store.parts={};
+  for(const k in RECIPES) if(store.parts[k]==null) store.parts[k]=0;
+  selId=null; regionsDirty=lightDirty=true;
+  rebuildRegions(); rebuildDepth(); rebuildLight(); refreshTools(); applyLayout(st.layout);
+  lastListSig=lastInspSig=lastShopSig=lastGridSig=lastStudySig="";
+  log(`Loaded a colony at tick ${tick}.`,"ev");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. RENDER
+       Two changes that make the rock readable:
+       (a) materials get distinct HUES and glyphs, not just shades —
+           colour alone can't survive being multiplied by a light value.
+       (b) light is quantised into 5 bands before it touches a tile.
+           A continuous gradient across 1900 tiles reads as noise; a
+           few clean steps read as pools of torchlight.
+   ═══════════════════════════════════════════════════════════════ */
+const MAT_VIS={
+  dirt:    {face:"#4A3826",top:"#634C33",glyph:"grit"},
+  yacon:   {face:"#3F4A26",top:"#566433",glyph:"root"},
+  taro:    {face:"#46303C",top:"#634458",glyph:"taro"},
+  stone:   {face:"#3A4B50",top:"#4F666C",glyph:"crack"},
+  crystal: {face:"#284656",top:"#376274",glyph:"gem"}
+};
+const BAND_F=[0.13,0.34,0.56,0.78,1.00];      // brightness per band
+const BAND_W=[0.00,0.10,0.24,0.40,0.58];      // warmth per band
+function bandOf(L){
+  return L<0.06?0 : L<0.24?1 : L<0.46?2 : L<0.70?3 : 4;
+}
+function tone(hex,f,warm){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)*f, g=((n>>8)&255)*f, b=(n&255)*f;
+  r+=warm*54; g+=warm*30; b+=warm*4;
+  return `rgb(${Math.min(255,r|0)},${Math.min(255,g|0)},${Math.min(255,b|0)})`;
+}
+
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+function sizeCanvas(){
+  const dpr=window.devicePixelRatio||1;
+  cv.width=W*CELL*dpr;cv.height=H*CELL*dpr;
+  cv.style.aspectRatio=`${W*CELL} / ${H*CELL}`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+sizeCanvas(); addEventListener("resize",sizeCanvas);
+const px2=t=>t.x*CELL+CELL/2, py2=t=>t.y*CELL+CELL/2;
+function draw(){
+  ctx.clearRect(0,0,W*CELL,H*CELL);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=idx(x,y), bd=bandOf(light[i]), f=BAND_F[bd], wm=BAND_W[bd];
+    const px=x*CELL, py=y*CELL;
+
+    if(!solid[i]){                                   // ── floor
+      ctx.fillStyle=tone("#16211F",f*0.85,wm*0.7);
+      ctx.fillRect(px,py,CELL,CELL);
+      if(bd>=2){                                     // faint floor speckle
+        ctx.fillStyle=tone("#22322E",f,wm*0.5);
+        ctx.fillRect(px+7,py+7,2,2);
+      }
+      continue;
+    }
+
+    const v=MAT_VIS[mat[i]];                         // ── rock face
+    ctx.fillStyle=tone(v.face,f,wm);
+    ctx.fillRect(px,py,CELL,CELL);
+
+    // lit top edge wherever rock meets open floor above — this is what
+    // makes walls read as walls instead of just darker floor
+    if(y>0&&!solid[idx(x,y-1)]){
+      ctx.fillStyle=tone(v.top,Math.min(1,f*1.25),wm);
+      ctx.fillRect(px,py,CELL,3);
+    }
+
+    if(bd>=1){
+      const a=0.35+f*0.65;
+      if(v.glyph==="gem"){
+        ctx.fillStyle=`rgba(126,186,220,${a})`;
+        ctx.beginPath();
+        ctx.moveTo(px+8,py+3);ctx.lineTo(px+13,py+8);
+        ctx.lineTo(px+8,py+13);ctx.lineTo(px+3,py+8);
+        ctx.closePath();ctx.fill();
+        ctx.fillStyle=`rgba(210,238,252,${a*0.8})`;
+        ctx.fillRect(px+7,py+6,2,2);
+      } else if(v.glyph==="root"){
+        ctx.strokeStyle=`rgba(150,190,110,${a})`;ctx.lineWidth=1.6;
+        ctx.beginPath();
+        ctx.moveTo(px+3,py+13);ctx.lineTo(px+6,py+7);ctx.lineTo(px+8,py+11);
+        ctx.lineTo(px+10,py+5);ctx.lineTo(px+13,py+12);ctx.stroke();
+      } else if(v.glyph==="taro"){
+        ctx.fillStyle=`rgba(198,142,182,${a})`;
+        ctx.beginPath();ctx.ellipse(px+8,py+9,3.6,4.6,0,0,7);ctx.fill();
+        ctx.strokeStyle=`rgba(150,190,110,${a*0.9})`;ctx.lineWidth=1.3;
+        ctx.beginPath();ctx.moveTo(px+8,py+5);ctx.lineTo(px+6,py+2);
+        ctx.moveTo(px+8,py+5);ctx.lineTo(px+10,py+2);ctx.stroke();
+      } else if(v.glyph==="crack"){
+        ctx.strokeStyle=`rgba(180,200,205,${a*0.5})`;ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(px+3,py+6);ctx.lineTo(px+9,py+6);
+        ctx.moveTo(px+7,py+11);ctx.lineTo(px+13,py+11);ctx.stroke();
+      } else {
+        ctx.fillStyle=`rgba(150,120,88,${a*0.45})`;
+        ctx.fillRect(px+4,py+5,2,2);ctx.fillRect(px+10,py+8,2,2);ctx.fillRect(px+6,py+11,2,2);
+      }
+    }
+
+    // partially-mined vein: a bar showing what's left in the rock
+    const units=DEFS.materials[mat[i]].units;
+    if(units>1&&vein[i]<units&&vein[i]>0&&bd>=1){
+      ctx.fillStyle="rgba(5,9,10,0.75)";ctx.fillRect(px+2,py+CELL-4,CELL-4,3);
+      ctx.fillStyle=tone(v.top,1,0.4);
+      ctx.fillRect(px+2,py+CELL-4,(CELL-4)*(vein[i]/units),3);
+    }
+
+    if(dig[i]===1){
+      ctx.strokeStyle="#E8B451";ctx.lineWidth=1.5;
+      ctx.strokeRect(px+1.5,py+1.5,CELL-3,CELL-3);
+    } else if(dig[i]===2){
+      ctx.strokeStyle="#C4562F";ctx.lineWidth=1.5;
+      ctx.strokeRect(px+1.5,py+1.5,CELL-3,CELL-3);
+      ctx.beginPath();ctx.moveTo(px+4,py+4);ctx.lineTo(px+CELL-4,py+CELL-4);ctx.stroke();
+    }
+  }
+  // lair tiles: an empty bed is an outline, a claimed one wears its
+  // occupant's own bedding
+  for(let i=0;i<W*H;i++){
+    if(roomTile[i]!==R_LAIR) continue;
+    const x=i%W, y=(i/W)|0, L=Math.max(0.22,lit(x,y));
+    const px=x*CELL, py=y*CELL, cx=px+CELL/2, cy=py+CELL/2;
+    ctx.fillStyle=`rgba(90,80,64,${0.18+L*0.22})`;
+    ctx.fillRect(px+1,py+1,CELL-2,CELL-2);
+    const owner=pawns.find(q=>!q.dead&&q.lairTile===i);
+    if(!owner){
+      ctx.strokeStyle=`rgba(120,112,92,${0.35+L*0.4})`;ctx.lineWidth=1;
+      ctx.setLineDash([2,2]);ctx.strokeRect(px+3.5,py+4.5,CELL-7,CELL-9);ctx.setLineDash([]);
+      continue;
+    }
+    const col=spOf(owner).color, a=0.45+L*0.55;
+    if(spOf(owner).bed==="nest"){                  // ratkin scrape a nest
+      ctx.strokeStyle=col.replace("#","rgba(").length?col:col;
+      ctx.globalAlpha=a; ctx.strokeStyle=col; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(cx,cy,5.2,0,7); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,2.6,0,7); ctx.stroke();
+      ctx.globalAlpha=1;
+    } else {                                       // delvers roll out a mat
+      ctx.globalAlpha=a; ctx.fillStyle=col;
+      ctx.fillRect(cx-6,cy-4,12,8);
+      ctx.fillStyle="#0B1213"; ctx.fillRect(cx-6,cy-4,3.5,8);
+      ctx.globalAlpha=1;
+    }
+  }
+
+  ctx.strokeStyle="#A2957A";ctx.setLineDash([3,3]);ctx.lineWidth=1;
+  ctx.strokeRect(store.x*CELL-CELL+1,store.y*CELL-CELL+1,CELL*3-2,CELL*3-2);ctx.setLineDash([]);
+  for(const t of things){
+    const cx=t.x*CELL+CELL/2,cy=t.y*CELL+CELL/2;
+    if(t.kind==="light"){
+      const L=LIGHTS[t.light], frac=Math.max(0,t.fuel/L.fuelMax);
+      const ever=t.light==="everlight";
+      if(t.fuel>0){
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,6);
+        g.addColorStop(0,ever?"#DCF2FF":"#FFE9B0");
+        g.addColorStop(1,ever?"#5FA8C8":"#D9A441");
+        ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,ever?5:4,0,7);ctx.fill();
+      } else {
+        ctx.strokeStyle="#4A3A32";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.stroke();
+      }
+      if(frac<0.4){                                   // running dry
+        ctx.fillStyle="rgba(5,9,10,0.8)";ctx.fillRect(px2(t)-5,py2(t)+6,10,2);
+        ctx.fillStyle=frac<=0?"#C4562F":"#D9A441";
+        ctx.fillRect(px2(t)-5,py2(t)+6,10*Math.max(0.06,frac),2);
+      }
+    } else if(t.kind==="lightsite"){
+      ctx.strokeStyle=t.light==="everlight"?"#6E9CB5":"#D9A441";
+      ctx.lineWidth=1;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.stroke();ctx.setLineDash([]);
+    } else if(t.kind==="heart"){
+      const frac=Math.max(0,t.hp/DEFS.heart.hp);
+      if(t.dark){
+        ctx.strokeStyle="#4A3038";ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(cx,cy,8,0,7);ctx.stroke();
+        ctx.strokeStyle="#6E3A44";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(cx-5,cy-6);ctx.lineTo(cx+2,cy);ctx.lineTo(cx-3,cy+6);ctx.stroke();
+      } else {
+        const pulse=0.72+0.28*Math.sin(tick/9);
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,11);
+        g.addColorStop(0,`rgba(255,236,190,${pulse})`);
+        g.addColorStop(0.5,`rgba(224,150,70,${0.75*pulse})`);
+        g.addColorStop(1,"rgba(150,70,40,0)");
+        ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,11,0,7);ctx.fill();
+        ctx.strokeStyle="#F2D08A";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(cx,cy,6,0,7);ctx.stroke();
+      }
+      if(frac<1){
+        ctx.fillStyle="rgba(5,9,10,0.8)";ctx.fillRect(cx-9,cy+9,18,3);
+        ctx.fillStyle=frac<0.35?"#C4562F":"#D9A441";ctx.fillRect(cx-9,cy+9,18*frac,3);
+      }
+    } else if(t.kind==="rift"){
+      const live=heartAlive();
+      const r=riftOf(), frac=r?Math.min(1,r.charge/DEFS.rift.cost):0;
+      ctx.strokeStyle=live?"#9A79C8":"#3A3040";ctx.lineWidth=1.5;
+      for(let k=0;k<3;k++){
+        ctx.globalAlpha=live?0.35+0.55*frac:0.3;
+        ctx.beginPath();ctx.ellipse(cx,cy,3+k*2.6,7-k*0.6,0,0,7);ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      if(live&&frac>0){
+        ctx.fillStyle="rgba(5,9,10,0.8)";ctx.fillRect(cx-8,cy+9,16,2.5);
+        ctx.fillStyle="#9A79C8";ctx.fillRect(cx-8,cy+9,16*frac,2.5);
+      }
+    } else if(t.kind==="pen"){
+      const L=Math.max(0.3,lit(t.x,t.y)), occ=penOccupancy(t);
+      ctx.strokeStyle=`rgba(170,140,100,${L})`;ctx.lineWidth=1.5;
+      ctx.setLineDash([3,2]);
+      ctx.strokeRect(cx-7,cy-7,14,14);ctx.setLineDash([]);
+      ctx.fillStyle=`rgba(170,140,100,${L*0.5})`;
+      for(let k=0;k<occ;k++) ctx.fillRect(cx-5+k*6,cy+3,4,3);
+      if(t.mode==="breed"){ ctx.fillStyle=`rgba(124,152,98,${L})`; ctx.fillRect(cx-2,cy-6,4,4); }
+    } else if(t.kind==="pensite"){
+      ctx.strokeStyle="#A2957A";ctx.lineWidth=1;ctx.setLineDash([2,2]);
+      ctx.strokeRect(cx-7,cy-7,14,14);ctx.setLineDash([]);
+    } else if(t.kind==="study"){
+      const L=Math.max(0.3,lit(t.x,t.y));
+      ctx.strokeStyle=`rgba(200,180,140,${L})`;ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-6,cy-6,12,12);
+      ctx.fillStyle=`rgba(200,180,140,${L*0.55})`;ctx.fillRect(cx-2,cy-6,4,12);
+    } else if(t.kind==="bench"){
+      const L=Math.max(0.3,lit(t.x,t.y));
+      ctx.strokeStyle=`rgba(110,156,181,${L})`;ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-7,cy-5,14,10);
+      ctx.fillStyle=`rgba(110,156,181,${L*0.5})`;ctx.fillRect(cx-3,cy-2,6,4);
+    }
+  }
+  for(const it of items){
+    const L=Math.max(0.25,lit(it.x,it.y));
+    if(it.k==="taro"){
+      ctx.fillStyle=`rgba(198,142,182,${L})`;
+      ctx.beginPath();ctx.ellipse(it.x*CELL+8,it.y*CELL+9,3.2,4,0,0,7);ctx.fill();
+    } else if(it.k==="book"){
+      ctx.fillStyle=`rgba(206,184,142,${L})`;ctx.fillRect(it.x*CELL+4,it.y*CELL+5,8,6);
+      ctx.fillStyle=`rgba(90,70,50,${L})`;ctx.fillRect(it.x*CELL+7,it.y*CELL+5,1.5,6);
+    } else {
+      ctx.fillStyle=it.k==="food"?`rgba(124,152,98,${L})`:it.k==="stone"?`rgba(150,160,160,${L})`:`rgba(110,156,181,${L})`;
+      ctx.fillRect(it.x*CELL+5,it.y*CELL+5,6,6);
+    }
+  }
+  for(const r of rats){
+    const L=Math.max(0.3,lit(r.x,r.y)), cx=r.x*CELL+8, cy=r.y*CELL+8;
+    if(r.penned){
+      ctx.fillStyle=`rgba(214,164,124,${L})`;
+      ctx.beginPath();ctx.arc(cx,cy-1,3.4,0,7);ctx.fill();
+      ctx.fillStyle="rgba(5,9,10,0.8)";ctx.fillRect(cx-6,cy+4,12,2.5);
+      ctx.fillStyle="#7C9862";ctx.fillRect(cx-6,cy+4,12*Math.min(1,r.tame/100),2.5);
+      continue;
+    }
+    if(r.cowed){                                   // beaten: lying on its side
+      ctx.strokeStyle=`rgba(196,86,47,${L*0.85})`;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(cx-5,cy+1);ctx.lineTo(cx+5,cy+1);ctx.stroke();
+      const frac=Math.max(0,r.cowTimer/DEFS.rats.cowTicks);
+      ctx.fillStyle="rgba(5,9,10,0.75)";ctx.fillRect(cx-5,cy-5,10,2);
+      ctx.fillStyle=frac<0.3?"#C4562F":"#D9A441";ctx.fillRect(cx-5,cy-5,10*frac,2);
+      continue;
+    }
+    const big=(r.hp||0)>DEFS.rats.hp*1.6;
+    ctx.fillStyle=r.deep?`rgba(150,70,140,${L})`:`rgba(196,86,47,${L})`;
+    ctx.beginPath();ctx.arc(cx,cy,big?4.6:3.5,0,7);ctx.fill();
+  }
+  if(dragA&&dragB){
+    const {r,w,h}=rectStats(dragA,dragB);
+    const cancel=tool==="cancel";
+    const X=r.x0*CELL,Y=r.y0*CELL,Wp=w*CELL,Hp=h*CELL;
+    const lairT=tool==="lair";
+    ctx.fillStyle=cancel?"rgba(196,86,47,0.14)":lairT?"rgba(162,149,122,0.16)":"rgba(232,180,81,0.15)";
+    ctx.fillRect(X,Y,Wp,Hp);
+    ctx.strokeStyle=cancel?"#C4562F":lairT?"#A2957A":"#E8B451";
+    ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeRect(X+0.75,Y+0.75,Wp-1.5,Hp-1.5);
+    ctx.setLineDash([]);
+    for(const [cx0,cy0] of [[X,Y],[X+Wp,Y],[X,Y+Hp],[X+Wp,Y+Hp]]){
+      ctx.fillStyle=cancel?"#C4562F":tool==="lair"?"#A2957A":"#E8B451";
+      ctx.fillRect(cx0-2,cy0-2,4,4);
+    }
+  }
+
+  for(const p of pawns){
+    const cx=p.x*CELL+CELL/2,cy=p.y*CELL+CELL/2;
+    if(p.dead){ctx.strokeStyle="#5A3A30";ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(cx-4,cy-4);ctx.lineTo(cx+4,cy+4);
+      ctx.moveTo(cx+4,cy-4);ctx.lineTo(cx-4,cy+4);ctx.stroke();continue;}
+    if(p.downed){
+      ctx.strokeStyle=p.id===selId?"#E6DDC7":"#C4562F";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(cx-6,cy);ctx.lineTo(cx+6,cy);ctx.stroke();
+      ctx.fillStyle="#8A6A55";ctx.beginPath();ctx.arc(cx,cy,3,0,7);ctx.fill();continue;
+    }
+    const worst=Math.min(p.needs.food,p.needs.rest,p.hp);
+    ctx.strokeStyle=p.id===selId?"#E6DDC7":worst<25?"#C4562F":worst<50?"#D9A441":"#4E6E6A";
+    ctx.lineWidth=p.id===selId?2.5:2;
+    ctx.beginPath();ctx.arc(cx,cy,6,0,7);ctx.stroke();
+    ctx.fillStyle=p.body.some(b=>b.pros)?"#B9D4E0":spOf(p).color;
+    ctx.beginPath();ctx.arc(cx,cy,3.6,0,7);ctx.fill();
+    if(p.sp==="ratkin"){                            // ears, so you can tell at a glance
+      ctx.fillStyle=spOf(p).color;
+      ctx.beginPath();ctx.arc(cx-3.4,cy-4.6,1.7,0,7);ctx.fill();
+      ctx.beginPath();ctx.arc(cx+3.4,cy-4.6,1.7,0,7);ctx.fill();
+    }
+    if(armed(p)){ctx.fillStyle="#B8BEBE";ctx.fillRect(cx+4,cy-8,4,4);}
+    else if(p.carry){ctx.fillStyle="#7C9862";ctx.fillRect(cx+4,cy-8,4,4);}
+    if(p.carryPawnId){ctx.strokeStyle="#8A6A55";ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(cx,cy,9,0,7);ctx.stroke();}
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   12. UI
+      The log lives entirely outside the panel rebuild, and the
+      panel only touches the DOM when its contents actually change.
+      That's what makes clicks land — innerHTML was previously being
+      replaced between mousedown and mouseup 60 times a second.
+   ═══════════════════════════════════════════════════════════════ */
+let tool="dig",painting=false;
+function cellFromEvent(e){
+  const r=cv.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/r.width*W),y=Math.floor((e.clientY-r.top)/r.height*H);
+  return inB(x,y)?{x,y}:null;
+}
+function apply(c,isDown){
+  if(!c) return;
+  const i=idx(c.x,c.y);
+  if(tool==="inspect"){
+    if(!isDown) return;
+    const p=pawns.find(p=>p.x===c.x&&p.y===c.y);
+    selId = (p && p.id!==selId) ? p.id : null;    // click same pawn or empty ground to clear
+    return;
+  }
+  if(c.x===0||c.y===0||c.x===W-1||c.y===H-1) return;
+  if(tool==="dig"){if(solid[i])dig[i]=1;}
+  else if(tool==="lair"){ if(!solid[i]) roomTile[i]=R_LAIR; }
+  else if(tool==="cancel"){dig[i]=0; roomTile[i]=R_NONE;
+    const s=things.findIndex(t=>(t.kind==="lightsite"||t.kind==="pensite")&&t.x===c.x&&t.y===c.y);
+    if(s>=0) things.splice(s,1);}
+  else if(tool==="pen"){
+    if(!solid[i]&&!things.some(t=>t.x===c.x&&t.y===c.y))
+      things.push({id:nextId++,kind:"pensite",x:c.x,y:c.y,claim:null});
+  }
+  else if(tool==="torch"||tool==="everlight"){
+    if(tool==="everlight"&&!techs.cells) return;
+    if(!solid[i]&&!things.some(t=>t.x===c.x&&t.y===c.y))
+      things.push({id:nextId++,kind:"lightsite",light:tool==="everlight"?"everlight":"torch",
+                   x:c.x,y:c.y,claim:null});
+  }
+}
+/* Dig and Cancel work as a box select: press, drag out a rectangle,
+   release to apply. Painting a freehand line was fiddly and easy to
+   get wrong — you can see exactly what you're about to commit to,
+   and back out with Esc or a right-click before releasing. Lights
+   still paint, because dragging a row of torches down a corridor is
+   genuinely useful. */
+const RECT_TOOLS={dig:1,cancel:1,lair:1};
+let dragA=null,dragB=null;
+const rectOf=(a,b)=>({x0:Math.min(a.x,b.x),x1:Math.max(a.x,b.x),
+                      y0:Math.min(a.y,b.y),y1:Math.max(a.y,b.y)});
+function rectStats(a,b){
+  const r=rectOf(a,b); let n=0;
+  for(let y=r.y0;y<=r.y1;y++)for(let x=r.x0;x<=r.x1;x++){
+    if(x===0||y===0||x===W-1||y===H-1) continue;
+    const i=idx(x,y);
+    if(tool==="dig"){ if(solid[i]&&dig[i]!==1) n++; }
+    else if(tool==="lair"){ if(!solid[i]&&roomTile[i]!==R_LAIR) n++; }
+    else if(dig[i]||roomTile[i]||things.some(t=>t.kind==="lightsite"&&t.x===x&&t.y===y)) n++;
+  }
+  return {r,n,w:r.x1-r.x0+1,h:r.y1-r.y0+1};
+}
+function applyRect(a,b){
+  const r=rectOf(a,b);
+  for(let y=r.y0;y<=r.y1;y++)for(let x=r.x0;x<=r.x1;x++) apply({x,y},true);
+}
+function cancelDrag(){ dragA=dragB=null; }
+
+cv.addEventListener("pointerdown",e=>{
+  if(e.button===2) return;
+  const c=cellFromEvent(e); if(!c) return;
+  cv.setPointerCapture(e.pointerId);
+  if(RECT_TOOLS[tool]){ dragA=c; dragB=c; }
+  else { painting=true; apply(c,true); }
+});
+cv.addEventListener("pointermove",e=>{
+  const c=cellFromEvent(e); if(!c) return;
+  if(dragA) dragB=c;
+  else if(painting) apply(c,false);
+});
+addEventListener("pointerup",()=>{
+  if(dragA&&dragB) applyRect(dragA,dragB);
+  cancelDrag(); painting=false;
+});
+cv.addEventListener("contextmenu",e=>{ e.preventDefault(); cancelDrag(); });
+addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  if(dragA) cancelDrag(); else selId=null;
+});
+
+document.querySelectorAll("[data-t]").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("[data-t]").forEach(x=>x.classList.remove("on"));b.classList.add("on");tool=b.dataset.t;}));
+document.querySelectorAll("[data-s]").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("[data-s]").forEach(x=>x.classList.remove("on"));b.classList.add("on");speed=+b.dataset.s;}));
+
+const seedIn=document.getElementById("seedIn");
+document.getElementById("newWorld").addEventListener("click",()=>{
+  seedText=seedIn.value.trim()||"deepholm";
+  genWorld(); lastListSig=lastInspSig=lastShopSig=lastGridSig=lastStudySig="";
+  refreshTools();
+  logEl.innerHTML=""; log(`A new hollow, seed "${seedText}".`,"ev");
+});
+document.getElementById("saveBtn").addEventListener("click",()=>{
+  const blob=new Blob([saveState()],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=`deepholm-${tick}.json`; a.click();
+  URL.revokeObjectURL(a.href);
+});
+const fileIn=document.getElementById("fileIn");
+document.getElementById("loadBtn").addEventListener("click",()=>fileIn.click());
+fileIn.addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ loadState(r.result); }catch(err){ fail(err); } };
+  r.readAsText(f); fileIn.value="";
+});
+
+const logEl=document.getElementById("log");
+function log(m,c=""){
+  const p=document.createElement("p");
+  p.innerHTML=`<span class="t">${String(tick).padStart(5,"0")}</span><span class="${c}">${m}</span>`;
+  logEl.appendChild(p);
+  while(logEl.children.length>200) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+const pawnsEl=document.getElementById("pawns"),inspEl=document.getElementById("insp"),
+      sysEl=document.getElementById("sys"),shopEl=document.getElementById("shop"),
+      clearBtn=document.getElementById("clearSel");
+const col=v=>v<25?"var(--rust)":v<50?"var(--amber)":"var(--sage)";
+const bar=(v,c)=>`<div class="bar"><i style="width:${Math.max(0,Math.min(100,v))}%;background:${c}"></i></div>`;
+
+// one listener, attached once — survives every rebuild
+pawnsEl.addEventListener("click",e=>{
+  const el=e.target.closest("[data-p]"); if(!el) return;
+  const id=+el.dataset.p;
+  selId = (selId===id) ? null : id;              // click again to deselect
+});
+clearBtn.addEventListener("click",()=>{selId=null;});
+
+let lastListSig="",lastInspSig="",lastShopSig="",lastGridSig="",lastStudySig="",lastPensSig="",lastHeartSig="";
+const studyEl=document.getElementById("study"),pensEl=document.getElementById("pens"),
+      heartEl=document.getElementById("heart");
+pensEl.addEventListener("click",e=>{
+  const b=e.target.closest("[data-pen]"); if(!b) return;
+  const pen=byId(things,+b.dataset.pen); if(!pen) return;
+  pen.mode = pen.mode==="breed" ? "tame" : "breed";
+  lastPensSig="";
+});
+
+/* ── bills UI ─────────────────────────────────────────────── */
+const billPick=document.getElementById("billPick"),shopBox=document.getElementById("shop");
+billPick.innerHTML=Object.entries(RECIPES).map(([k,r])=>`<option value="${k}">${r.name}</option>`).join("");
+document.getElementById("addBill").addEventListener("click",()=>{
+  bills.push({id:nextId++,recipe:billPick.value,mode:"until",target:1,done:0,paused:false});
+  lastShopSig="";
+});
+shopBox.addEventListener("click",e=>{
+  const btn=e.target.closest("[data-act]"); if(!btn) return;
+  const row=btn.closest("[data-b]"); if(!row) return;
+  const b=bills.find(x=>x.id===+row.dataset.b); if(!b) return;
+  const a=btn.dataset.act;
+  if(a==="inc") b.target++;
+  else if(a==="dec") b.target=Math.max(1,b.target-1);
+  else if(a==="mode"){ b.mode=b.mode==="count"?"until":"count"; b.done=0; }
+  else if(a==="pause") b.paused=!b.paused;
+  else if(a==="del") bills.splice(bills.indexOf(b),1);
+  lastShopSig="";
+});
+
+/* ── work priority grid ───────────────────────────────────── */
+document.getElementById("legend").innerHTML=
+  [["Dirt",MAT_VIS.dirt.top],["Stone",MAT_VIS.stone.top],
+   ["Yacon",MAT_VIS.yacon.top],["Taro",MAT_VIS.taro.top],["Lair",'#5A5040'],
+    ["Crystal",MAT_VIS.crystal.top],["Excavated","#22322E"],["Tome","#CEB88E"],
+    ["Heartstone","#E09646"],["Rift","#9A79C8"],
+    ["Ratkin",SPECIES.ratkin.color]]
+   .map(([n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")
+  +`<span><i style="background:transparent;border:1.5px solid #E8B451"></i>Marked to dig</span>`
+  +`<span><i style="background:transparent;border:1.5px solid #C4562F"></i>Unreachable</span>`;
+
+function refreshTools(){
+  document.getElementById("btnEver").style.display=techs.cells?"":"none";
+}
+
+/* ── panel layout ─────────────────────────────────────────────
+   Cards can be collapsed by clicking their title and reordered by
+   dragging the grip. Order and collapsed state ride along in the
+   save file, so a layout survives a reload. Drag is armed only from
+   the grip, so buttons inside a panel still work normally. */
+let collapsed={};
+const sideEl=document.getElementById("side");
+let dragPanel=null;
+
+function allPanels(){ return [...document.querySelectorAll("[data-panel]")]; }
+function wirePanels(){
+  for(const c of allPanels()){
+    if(c.dataset.wired) continue;
+    c.dataset.wired="1";
+    const head=c.querySelector(".card-head");
+    const grip=c.querySelector(".grip");
+    const chev=c.querySelector(".chev");
+    const key=c.dataset.panel;
+
+    const toggle=()=>{
+      collapsed[key]=!collapsed[key];
+      c.classList.toggle("collapsed",!!collapsed[key]);
+      if(chev) chev.innerHTML=collapsed[key]?"&#9656;":"&#9662;";
+    };
+    if(chev) chev.addEventListener("click",e=>{e.stopPropagation();toggle();});
+    const lbl=head&&head.querySelector(".label");
+    if(lbl) lbl.addEventListener("click",toggle);
+
+    if(grip&&c.parentElement===sideEl){
+      grip.addEventListener("mousedown",()=>{c.draggable=true;});
+      c.addEventListener("dragstart",()=>{dragPanel=c;c.classList.add("dragging");});
+      c.addEventListener("dragend",()=>{
+        dragPanel=null;c.classList.remove("dragging");c.draggable=false;
+      });
+      c.addEventListener("dragover",e=>{
+        e.preventDefault();
+        if(!dragPanel||dragPanel===c) return;
+        const r=c.getBoundingClientRect();
+        sideEl.insertBefore(dragPanel,(e.clientY-r.top)<r.height/2?c:c.nextSibling);
+      });
+    } else if(grip){
+      grip.style.cursor="default";
+      grip.title="This panel is fixed; the sidebar cards can be reordered.";
+    }
+  }
+}
+addEventListener("mouseup",()=>{ for(const c of allPanels()) c.draggable=false; });
+
+function layoutState(){
+  return {order:[...sideEl.children].map(c=>c.dataset.panel).filter(Boolean),collapsed};
+}
+function applyLayout(L){
+  if(!L) return;
+  if(L.order) for(const key of L.order){
+    const c=sideEl.querySelector(`[data-panel="${key}"]`);
+    if(c) sideEl.appendChild(c);
+  }
+  collapsed=Object.assign({},L.collapsed||{});
+  for(const c of allPanels()){
+    const on=!!collapsed[c.dataset.panel];
+    c.classList.toggle("collapsed",on);
+    const chev=c.querySelector(".chev");
+    if(chev) chev.innerHTML=on?"&#9656;":"&#9662;";
+  }
+}
+wirePanels();
+
+const hintEl=document.getElementById("toolHint");
+const TOOL_HINT={dig:"drag a box &middot; Esc or right-click cancels",
+  lair:"drag a box over open floor &middot; one tile is one bed",
+  cancel:"drag a box to clear digs and lairs",
+  torch:"click or drag to place torches",
+  everlight:"click or drag to place everlights",
+  inspect:"click a colonist &middot; Esc clears"};
+function drawHint(){
+  if(dragA&&dragB){
+    const {n,w,h}=rectStats(dragA,dragB);
+    const verb=tool==="cancel"?"clear":tool==="lair"?"make beds in":"dig";
+    hintEl.innerHTML=`<b style="color:${tool==="cancel"?"var(--rust)":"var(--amber)"}">${w}&times;${h}</b>`+
+      ` &middot; ${n} tile${n===1?"":"s"} to ${verb}`;
+  } else hintEl.innerHTML=TOOL_HINT[tool]||"";
+}
+
+const gridEl=document.getElementById("pgrid");
+gridEl.addEventListener("click",e=>{
+  const c=e.target.closest("[data-w]"); if(!c) return;
+  const p=byId(pawns,+c.dataset.pw); if(!p||p.dead) return;
+  const k=c.dataset.w;
+  if(!canDo(p,k)) return;                 // ratkin can't be told to read
+  p.prio[k]=((p.prio[k]|0)+1)%5;          // 1→2→3→4→never→1
+  lastGridSig="";
+});
+function drawGrid(){
+  const sig=pawns.map(p=>p.id+p.sp+p.dead+WORK_TYPES.map(w=>p.prio[w.key]|0).join("")).join("|");
+  if(sig===lastGridSig) return;
+  lastGridSig=sig;
+  const head=`<tr><th style="text-align:left">Colonist</th>`+
+    WORK_TYPES.map(w=>`<th>${w.name}</th>`).join("")+`</tr>`;
+  const rows=pawns.map(p=>`<tr class="${p.dead?"dead":""}"><td class="nm">${p.name}`+
+    (p.sp==="ratkin"?` <span style="color:var(--dim);font-size:10px">ratkin</span>`:"")+`</td>`+
+    WORK_TYPES.map(w=>{
+      if(!canDo(p,w.key))
+        return `<td><span class="pc off" style="cursor:default;opacity:.45">·</span></td>`;
+      const v=p.prio[w.key]|0;
+      return `<td><button class="pc ${v?"p"+v:"off"}" data-pw="${p.id}" data-w="${w.key}">${v||"—"}</button></td>`;
+    }).join("")+`</tr>`).join("");
+  gridEl.innerHTML=head+rows;
+}
+const RES={tick:document.getElementById("rTick"),food:document.getElementById("rFood"),
+           stone:document.getElementById("rStone"),crys:document.getElementById("rCrys"),
+           taro:document.getElementById("rTaro"),
+           book:document.getElementById("rBook"),rats:document.getElementById("rRats")};
+function drawPanel(){
+  RES.tick.textContent=tick; RES.food.textContent=store.food|0;
+  RES.stone.textContent=store.stone|0; RES.crys.textContent=store.crystal|0;
+  RES.book.textContent=store.book|0; RES.taro.textContent=store.taro|0;
+  RES.rats.textContent=rats.length;
+
+  const listSig=pawns.map(p=>`${p.id}${p.dead}${p.downed}${p.job?.type}${p.needs.food|0}${p.needs.rest|0}${p.hp|0}${p.needs.morale|0}${spOf(p).darkVision<1&&lightFrac(p.x,p.y)<0.25?"D":""}`).join("|")+"~"+selId;
+  if(listSig!==lastListSig){
+    lastListSig=listSig;
+    pawnsEl.innerHTML=pawns.map(p=>{
+      const st=p.dead?"dead":p.downed?"DOWNED":(p.job?.type||"…");
+      return `<div class="pawn${p.dead?" dead":""}${p.id===selId?" sel":""}" data-p="${p.id}">
+        <div class="pawn-top"><b style="color:${spOf(p).color}">${p.name}</b><span class="pawn-job${p.downed?" down":""}">${(!p.dead&&spOf(p).darkVision<1&&lightFrac(p.x,p.y)<0.25)?'<span title="working blind" style="color:var(--amber)">&#9679;</span> ':''}${st}</span></div>
+        <div class="bar-row"><span>food</span>${bar(p.needs.food,col(p.needs.food))}</div>
+        <div class="bar-row"><span>rest</span>${bar(p.needs.rest,col(p.needs.rest))}</div>
+        <div class="bar-row"><span>hp</span>${bar(p.hp,col(p.hp))}</div>
+        <div class="bar-row"><span>heart</span>${bar(p.needs.morale||0,col(p.needs.morale||0))}</div></div>`;
+    }).join("");
+  }
+
+  const p=pawns.find(p=>p.id===selId);
+  clearBtn.style.display=p?"":"none";
+  const inspSig=p?`${p.id}${p.hp|0}${p.needs.morale|0}${p.lairTile}${(lightFrac(p.x,p.y)*20)|0}${p.body.filter(b=>b.gone).length}${p.body.filter(b=>b.pros).length}${SKILL_LIST.map(k=>lvl(p,k)).join()}${armed(p)}`:"none";
+  if(inspSig!==lastInspSig){
+    lastInspSig=inspSig;
+    if(!p){
+      inspEl.innerHTML=`<span style="color:var(--dim);font-size:11px">Pick a colonist above, or use the Inspect tool on the map. Click again or press Esc to clear.</span>`;
+    } else {
+      const c=caps(p),gone=p.body.filter(b=>isMissing(b)),pros=p.body.filter(b=>b.pros);
+      const pips=k=>{let s="";const L=lvl(p,k);for(let i=0;i<10;i++)s+=`<span class="pip${i<L/2?" on":""}"></span>`;return s;};
+      inspEl.innerHTML=
+        `<div style="font-weight:600;margin-bottom:6px;color:${spOf(p).color}">${p.name}`+
+        ` <span style="color:var(--dim);font-weight:400;font-size:11px">${spOf(p).name}</span>`+
+        `${armed(p)?' <span style="color:var(--sand);font-weight:400">· holding a stone</span>':''}</div>`+
+        SKILL_LIST.map(k=>`<div class="skill"><span>${k}</span><span><b>${lvl(p,k)}</b> ${pips(k)}</span></div>`).join("")+
+        `<div style="border-top:1px solid var(--line);margin:7px 0 5px"></div>`+
+        Object.entries(c).map(([k,v])=>`<div class="cap"><span>${k}</span><b style="color:${v>=0.999?"var(--sage)":v>0.6?"var(--amber)":"var(--rust)"}">${Math.round(v*100)}%</b></div>`).join("")+
+        `<div class="cap"><span>bed</span><b style="color:${p.lairTile>=0?"var(--sage)":"var(--rust)"}">${p.lairTile>=0?"claimed":"none"}</b></div>`+
+        `<div class="cap"><span>heart</span><b style="color:${(p.needs.morale|0)<25?"var(--rust)":"var(--sand)"}">${p.needs.morale|0}%</b></div>`+
+        `<div class="cap"><span>pain</span><b style="color:${painOf(p)>0.4?"var(--rust)":"var(--sand)"}">${Math.round(painOf(p)*100)}%</b></div>`+
+        `<div class="cap"><span>move speed</span><b style="color:var(--sand)">${moveSpeed(p).toFixed(2)}</b></div>`+
+        `<div class="cap"><span>melee dmg</span><b style="color:var(--sand)">${meleeDmg(p).toFixed(1)}</b></div>`+
+        `<div style="border-top:1px solid var(--line);margin:7px 0 5px"></div>`+
+        `<div class="cap"><span>dark vision</span><b style="color:${spOf(p).darkVision>=1?"var(--sage)":"var(--sand)"}">${Math.round(spOf(p).darkVision*100)}%</b></div>`+
+        `<div class="cap"><span>light here</span><b style="color:${lightFrac(p.x,p.y)>0.6?"var(--sage)":lightFrac(p.x,p.y)>0.2?"var(--amber)":"var(--rust)"}">${Math.round(lightFrac(p.x,p.y)*100)}%</b></div>`+
+        ["mine","craft","study"].map(k=>{
+          const m=darkMult(p,k);
+          return `<div class="cap"><span>&nbsp;&nbsp;${k} here</span><b style="color:${m>0.95?"var(--sage)":m>0.7?"var(--amber)":"var(--rust)"}">${Math.round(m*100)}%</b></div>`;
+        }).join("")+
+        ((gone.length||pros.length)?`<div style="border-top:1px solid var(--line);margin:7px 0 5px"></div>`:"")+
+        pros.map(b=>`<div class="pros">${partLabel(b)}</div>`).join("")+
+        gone.map(b=>`<div class="wound">missing ${partLabel(b)}</div>`).join("")+
+        (!gone.length&&!pros.length?`<div class="wound" style="color:var(--sage);margin-top:7px">unmarked</div>`:"");
+    }
+  }
+
+  const active=nextBill();
+  const shopSig=bills.map(b=>`${b.id}${b.recipe}${b.mode}${b.target}${b.done}${b.paused}`).join("|")
+    +"~"+Object.values(store.parts).join()+"~"+(active?active.id:0);
+  if(shopSig!==lastShopSig){
+    lastShopSig=shopSig;
+    shopEl.innerHTML = bills.length ? bills.map(b=>{
+      const r=RECIPES[b.recipe], have=store.parts[b.recipe]||0;
+      const cur=b.mode==="count"?b.done:have;
+      const costs=Object.entries(r.cost).map(([m,n])=>`${n} ${m}`).join(", ");
+      const on=active&&active.id===b.id;
+      return `<div class="bill${b.paused?" paused":""}" data-b="${b.id}">
+        <div class="bill-top"><b>${r.name}${on?' <span style="color:var(--amber)">&middot;</span>':''}</b>
+          <span><button data-act="pause">${b.paused?"▶":"❚❚"}</button>
+                <button data-act="del">✕</button></span></div>
+        <div class="bill-row">
+          <span class="ct">${cur}/${b.target}</span>
+          <button data-act="dec">−</button><button data-act="inc">+</button>
+          <button data-act="mode" style="flex:1">${b.mode==="count"?"Make X":"Do until X"}</button>
+        </div>
+        <div style="color:var(--dim);font-size:10px;margin-top:3px">${costs} each${have?` &middot; ${have} in store`:""}</div>
+      </div>`;
+    }).join("") : `<span style="color:var(--dim);font-size:11px">No bills. The bench sits idle.</span>`;
+  }
+
+  const H=heartOf(), RF=riftOf();
+  const cands=riftCandidates();
+  const heartSig=`${H?(H.hp|0)+H.dark:"x"}|${RF?(RF.charge/40)|0:0}|${cands.map(c=>c.sp+c.ok+c.unmet.join()).join()}|${store.food|0}`;
+  if(heartSig!==lastHeartSig){
+    lastHeartSig=heartSig;
+    if(!H) heartEl.innerHTML=`<span style="color:var(--rust)">No Heartstone.</span>`;
+    else if(H.dark){
+      const can=canPay(DEFS.heart.rekindle);
+      heartEl.innerHTML=
+        `<div style="color:var(--rust);font-weight:600">DARK</div>`+
+        `<div style="color:var(--dim);margin-top:3px">The rift is shut. Only taming will grow the hold.</div>`+
+        `<div style="margin-top:6px;color:${can?"var(--amber)":"var(--dim)"}">Rekindle: ${Object.entries(DEFS.heart.rekindle).map(([k,n])=>`${n} ${k}`).join(", ")}${can?" &middot; underway":" &middot; short"}</div>`;
+    } else {
+      const frac=Math.round(100*H.hp/DEFS.heart.hp);
+      const charge=RF?Math.round(100*Math.min(1,RF.charge/DEFS.rift.cost)):0;
+      const starved=store.food<DEFS.rift.minFood;
+      heartEl.innerHTML=
+        `<div class="cap"><span>stone</span><b style="color:${frac<40?"var(--rust)":frac<100?"var(--amber)":"var(--sage)"}">${frac}%</b></div>`+
+        `<div class="cap"><span>rift</span><b style="color:${starved?"var(--rust)":"#B79AE0"}">${starved?"needs food":charge+"%"}</b></div>`+
+        `<div style="border-top:1px solid var(--line);margin:6px 0 4px"></div>`+
+        cands.map(c=>
+          `<div style="margin-bottom:3px">
+             <span style="color:${c.ok?"var(--sage)":"var(--dim)"}">${c.ok?"&#10003;":"&#183;"} ${SPECIES[c.sp].name}</span>
+             ${c.ok?"":`<div style="color:var(--dim);padding-left:12px">wants ${c.unmet.join(", ")}</div>`}
+           </div>`).join("");
+    }
+  }
+
+  const pens=things.filter(t=>t.kind==="pen");
+  const pensSig=pens.map(p=>`${p.id}${p.mode}${penOccupancy(p)}`).join("|")+rats.filter(r=>r.penned).map(r=>r.tame|0).join(",");
+  if(pensSig!==lastPensSig){
+    lastPensSig=pensSig;
+    pensEl.innerHTML = pens.length ? pens.map(pen=>{
+      const held=rats.filter(r=>r.penned&&r.penId===pen.id);
+      const breed=pen.mode==="breed";
+      return `<div style="border-top:1px solid var(--line);padding:5px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:5px">
+          <span style="color:var(--sand)">Pen ${pen.x},${pen.y} &middot; ${held.length}/${DEFS.rats.penCap}</span>
+          <button data-pen="${pen.id}" style="padding:1px 7px;font-size:11px;color:${breed?"var(--sage)":"var(--amber)"}">${breed?"Breed":"Tame"}</button>
+        </div>
+        ${held.map(r=>breed
+          ? `<div style="color:var(--dim)">livestock</div>`
+          : `<div class="bar" style="margin-top:3px"><i style="width:${Math.min(100,r.tame)}%;background:var(--sage)"></i></div>`).join("")}
+      </div>`;
+    }).join("") : `<span style="color:var(--dim)">No pens. Beaten rats expire where they lie.</span>`;
+  }
+
+  const nt=nextTech();
+  const studySig=`${store.book}|${Object.keys(techs).join()}|${nt}`;
+  if(studySig!==lastStudySig){
+    lastStudySig=studySig;
+    const done=Object.keys(TECHS).filter(k=>techs[k]);
+    studyEl.innerHTML=
+      `<div style="color:var(--sand)">tomes in store <b style="color:${store.book?"var(--crys)":"var(--dim)"}">${store.book}</b></div>`+
+      (done.length?`<div style="color:var(--crys);margin-top:5px">${done.map(k=>"✓ "+TECHS[k].name).join("<br>")}</div>`:"")+
+      (nt?`<div style="margin-top:6px;border-top:1px solid var(--line);padding-top:5px">
+            <span style="color:${store.book>=TECHS[nt].books?"var(--amber)":"var(--dim)"}">${TECHS[nt].name}</span>
+            <div style="color:var(--dim);margin-top:2px">needs ${TECHS[nt].books} tome${TECHS[nt].books>1?"s":""}. ${TECHS[nt].blurb}</div></div>`
+        :`<div style="color:var(--sage);margin-top:6px">Nothing left to learn.</div>`);
+  }
+
+  let open=0,dark=0,lowFuel=0;
+  for(const t of things) if(t.kind==="light"&&t.fuel<LIGHTS[t.light].refuelAt) lowFuel++;
+  for(let i=0;i<W*H;i++) if(!solid[i]){open++;if(light[i]<DEFS.light.darkBelow)dark++;}
+  sysEl.innerHTML=`regions &nbsp;<b style="color:var(--bone)">${regionCount}</b><br>
+    excavated &nbsp;<b style="color:var(--bone)">${open}</b><br>
+    unlit &nbsp;<b style="color:${dark>open*0.5?"var(--rust)":"var(--bone)"}">${dark}</b><br>
+    lights &nbsp;<b style="color:var(--bone)">${things.filter(t=>t.kind==="light").length}</b>
+      ${lowFuel?`<b style="color:var(--rust)">(${lowFuel} low)</b>`:""}<br>
+    beds &nbsp;<b style="color:var(--bone)">${(()=>{let n=0;for(let i=0;i<W*H;i++)if(roomTile[i]===R_LAIR)n++;return n;})()}</b>
+      in <b style="color:var(--bone)">${roomsOf(R_LAIR).length}</b> lair(s)<br>
+    homeless &nbsp;<b style="color:${pawns.filter(q=>!q.dead&&q.lairTile<0).length?"var(--rust)":"var(--bone)"}">${pawns.filter(q=>!q.dead&&q.lairTile<0).length}</b><br>
+    ${(()=>{const blind=pawns.filter(q=>!q.dead&&spOf(q).darkVision<1&&lightFrac(q.x,q.y)<0.25).length;
+      return `working blind &nbsp;<b style="color:${blind?"var(--amber)":"var(--bone)"}">${blind}</b><br>`;})()}
+    deepest &nbsp;<b style="color:var(--bone)">${deepest()}</b> steps<br>
+    pens &nbsp;<b style="color:var(--bone)">${things.filter(t=>t.kind==="pen").length}</b>
+      ${rats.filter(r=>r.penned).length?`<b style="color:var(--sand)">(${rats.filter(r=>r.penned).length} held)</b>`:""}<br>
+    cowed &nbsp;<b style="color:${rats.filter(r=>r.cowed).length?"var(--amber)":"var(--bone)"}">${rats.filter(r=>r.cowed).length}</b><br>
+    seed &nbsp;<b style="color:var(--bone)">${seedText}</b>`;
+
+  drawGrid();
+  drawHint();
+}
+
+/* main loop — wrapped so a render error can never kill the sim */
+const errEl=document.getElementById("err");
+let errored=false;
+function fail(e){
+  if(errored) return; errored=true;
+  errEl.style.display="block";
+  errEl.textContent="Render error (sim is still running): "+(e&&e.message?e.message:e);
+  console.error(e);
+}
+genWorld();
+log("Three of you, a torch, and a great deal of rock.");
+let acc=0,last=performance.now();
+function frame(now){
+  try{
+    acc+=now-last;last=now;
+    if(speed>0){let g=0;while(acc>=DEFS.tickMs&&g<30){acc-=DEFS.tickMs;for(let i=0;i<speed;i++)step();g++;}}
+    else acc=0;
+    draw();drawPanel();
+  }catch(e){ fail(e); }
+  requestAnimationFrame(frame);          // ← always re-registers, no matter what
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
